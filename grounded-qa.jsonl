@@ -1,0 +1,15 @@
+{"id": "qa01", "question": "How many bottles are in the Vineyard tier each quarter?", "kind": "single", "must_contain_any": ["six", "6"], "must_not_contain": ["twelve"]}
+{"id": "qa02", "question": "What is the tasting fee?", "kind": "single", "must_contain_any": ["20", "twenty"], "must_not_contain": []}
+{"id": "qa03", "question": "When did the 2024 harvest begin?", "kind": "single", "must_contain_any": ["9 September", "September 9", "Sept 9"], "must_not_contain": []}
+{"id": "qa04", "question": "How many states do you ship to?", "kind": "single", "must_contain_any": ["34", "thirty-four"], "must_not_contain": []}
+{"id": "qa05", "question": "Can I bring a dog inside the tasting room?", "kind": "single", "must_contain_any": ["no", "not", "service"], "must_not_contain": ["yes, dogs are allowed inside"]}
+{"id": "qa06", "question": "What was the Pinot Gris picked at?", "kind": "single", "must_contain_any": ["21.8"], "must_not_contain": []}
+{"id": "qa07", "question": "What happens if a shipment is returned to you?", "kind": "single", "must_contain_any": ["25", "restocking"], "must_not_contain": []}
+{"id": "qa08", "question": "How many people can take the barrel room tour?", "kind": "single", "must_contain_any": ["ten", "10"], "must_not_contain": []}
+{"id": "qa09", "question": "I am a club member bringing five guests on a Saturday. What do I owe in tasting fees and do I need a reservation?", "kind": "two", "must_contain_any": ["three", "3", "reservation"], "must_not_contain": []}
+{"id": "qa10", "question": "Why would someone looking for your 2024 rose not find one, and what would they be offered instead?", "kind": "two", "must_contain_any": ["no rose", "did not bottle", "Pinot Noir"], "must_not_contain": []}
+{"id": "qa11", "question": "If I join the club today and immediately want out, what happens?", "kind": "two", "must_contain_any": ["one", "charged", "shipment"], "must_not_contain": []}
+{"id": "qa12", "question": "What is the alcohol percentage of the 2024 estate Pinot Noir?", "kind": "absent", "must_contain_any": [], "must_not_contain": []}
+{"id": "qa13", "question": "Who is the winemaker?", "kind": "absent", "must_contain_any": [], "must_not_contain": []}
+{"id": "qa14", "question": "How much does the Cellar tier cost per quarter?", "kind": "absent", "must_contain_any": [], "must_not_contain": []}
+{"id": "qa15", "question": "What yeast strain was used on the 2024 Pinot Gris?", "kind": "absent", "must_contain_any": [], "must_not_contain": []}

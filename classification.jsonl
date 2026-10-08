@@ -1,0 +1,50 @@
+{"id": "cl01", "input": "Can I book a tasting for four people Saturday at 2?", "expected": "appointment", "note": "clear"}
+{"id": "cl02", "input": "Need to move our reservation from Friday to Sunday.", "expected": "appointment", "note": "clear"}
+{"id": "cl03", "input": "Do you have anything open this weekend for six of us?", "expected": "appointment", "note": "clear"}
+{"id": "cl04", "input": "Cancelling our 3pm, something came up.", "expected": "appointment", "note": "clear"}
+{"id": "cl05", "input": "Is the barrel room tour bookable in advance?", "expected": "appointment", "note": "clear"}
+{"id": "cl06", "input": "We'd like to reserve the patio for a birthday, 12 people.", "expected": "appointment", "note": "clear"}
+{"id": "cl07", "input": "Putting us down for the 14th if that works.", "expected": "appointment", "note": "clear"}
+{"id": "cl08", "input": "I was charged twice for the November club shipment.", "expected": "billing", "note": "clear"}
+{"id": "cl09", "input": "My card on file expired, how do I update it?", "expected": "billing", "note": "clear"}
+{"id": "cl10", "input": "Can I get a receipt emailed for last weekend?", "expected": "billing", "note": "clear"}
+{"id": "cl11", "input": "The discount didn't apply to my order.", "expected": "billing", "note": "clear"}
+{"id": "cl12", "input": "Refund still hasn't shown up after two weeks.", "expected": "billing", "note": "clear"}
+{"id": "cl13", "input": "What does the club cost per quarter?", "expected": "billing", "note": "clear"}
+{"id": "cl14", "input": "Do you still have the 2022 Pinot Gris?", "expected": "availability", "note": "clear"}
+{"id": "cl15", "input": "Is the Marechal Foch sold out?", "expected": "availability", "note": "clear"}
+{"id": "cl16", "input": "How many bottles of the reserve are left?", "expected": "availability", "note": "clear"}
+{"id": "cl17", "input": "Are you open on Thanksgiving?", "expected": "availability", "note": "hours"}
+{"id": "cl18", "input": "What time do you close tonight?", "expected": "availability", "note": "hours"}
+{"id": "cl19", "input": "Do you carry anything non-alcoholic for a designated driver?", "expected": "availability", "note": "clear"}
+{"id": "cl20", "input": "The bottle we opened last night was corked.", "expected": "complaint", "note": "clear"}
+{"id": "cl21", "input": "Server was dismissive and we left early.", "expected": "complaint", "note": "clear"}
+{"id": "cl22", "input": "Waited 40 minutes with a reservation. Not great.", "expected": "complaint", "note": "clear"}
+{"id": "cl23", "input": "Two of the six bottles arrived broken, again.", "expected": "complaint", "note": "clear"}
+{"id": "cl24", "input": "The 2023 rose tastes nothing like last year's.", "expected": "complaint", "note": "borderline: could be question"}
+{"id": "cl25", "input": "Do you ship to Texas?", "expected": "question", "note": "clear"}
+{"id": "cl26", "input": "Are dogs allowed on the patio?", "expected": "question", "note": "clear"}
+{"id": "cl27", "input": "Where exactly are you? Maps sent me to a field.", "expected": "question", "note": "clear"}
+{"id": "cl28", "input": "Do you do weddings?", "expected": "question", "note": "clear"}
+{"id": "cl29", "input": "Is there food, or should we eat first?", "expected": "question", "note": "clear"}
+{"id": "cl30", "input": "Can we bring our own picnic?", "expected": "question", "note": "clear"}
+{"id": "cl31", "input": "Do you have gift cards?", "expected": "question", "note": "clear"}
+{"id": "cl32", "input": "Someone slipped on the steps by the barrel room and hurt their wrist.", "expected": "escalate", "note": "injury"}
+{"id": "cl33", "input": "I'm a reporter working on a piece about the 2024 smoke taint.", "expected": "escalate", "note": "press"}
+{"id": "cl34", "input": "This is a formal notice regarding the trademark on your label.", "expected": "escalate", "note": "legal"}
+{"id": "cl35", "input": "We'd like to carry your wine in 40 stores. Who handles wholesale?", "expected": "escalate", "note": "wholesale"}
+{"id": "cl36", "input": "My order never came and my bank is reversing the charge tomorrow.", "expected": "escalate", "note": "borderline: billing + urgency"}
+{"id": "cl37", "input": "I have a severe sulfite allergy, what is actually in the rose?", "expected": "escalate", "note": "borderline: health"}
+{"id": "cl38", "input": "Hi", "expected": "question", "note": "ambiguous: no content"}
+{"id": "cl39", "input": "Following up on my last email.", "expected": "escalate", "note": "ambiguous: no context"}
+{"id": "cl40", "input": "Is Saturday still on?", "expected": "appointment", "note": "ambiguous: assumes prior booking"}
+{"id": "cl41", "input": "That didn't work.", "expected": "escalate", "note": "ambiguous: no referent"}
+{"id": "cl42", "input": "Quick question about the club.", "expected": "question", "note": "ambiguous: could be billing"}
+{"id": "cl43", "input": "Can you call me?", "expected": "escalate", "note": "ambiguous: no reason given"}
+{"id": "cl44", "input": "We had an issue with the shipment and also want to book a visit.", "expected": "escalate", "note": "ambiguous: two intents"}
+{"id": "cl45", "input": "Still nothing.", "expected": "escalate", "note": "ambiguous: no referent"}
+{"id": "cl46", "input": "The price seems wrong on the website.", "expected": "billing", "note": "borderline: could be question"}
+{"id": "cl47", "input": "Do you have the 2021 left, and can we come try it Sunday?", "expected": "appointment", "note": "borderline: two intents"}
+{"id": "cl48", "input": "I was told someone would get back to me about a refund three weeks ago.", "expected": "escalate", "note": "borderline: billing + escalation"}
+{"id": "cl49", "input": "Your hours online say 5 but the door was locked at 4:30.", "expected": "complaint", "note": "borderline: could be availability"}
+{"id": "cl50", "input": "Thanks!", "expected": "question", "note": "ambiguous: no request"}
