@@ -1,4 +1,12 @@
+![Project Logo](img/logo.png)
+
 # Pi SLM experiment kit
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Python 3](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
+![Raspberry Pi](https://img.shields.io/badge/Hardware-Raspberry%20Pi-A22846?logo=raspberrypi&logoColor=white)
+![Ollama](https://img.shields.io/badge/Models-Ollama-local-5C8D89)
+![Experiment](https://img.shields.io/badge/Method-Reproducible-166534)
 
 Everything needed to run the scoped weekend experiment behind "Do You
 Actually Need an LLM?". Standard library Python only, so it runs on the Pi
