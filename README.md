@@ -206,8 +206,13 @@ without looking anything up. Nothing in them is real.
 Do not edit a fixture after seeing a model fail it. If a fixture turns out to
 be genuinely wrong, fix it, note the change, and re-run every model.
 
-Record CPU temperature if it is convenient, but it is not load-bearing and is
-on the cut list.
+Check `vcgencmd get_throttled` before and after a run on a Pi, and keep
+the reading. `0x0` means the cooling held and the latency numbers describe
+the model. Anything else means they partly describe a CPU being clocked
+down, and it belongs in the write-up. This is not optional advice: on a
+passively cooled Pi 4 with heatsinks, a thirty-call run of a 360M model
+was enough to hit the soft temperature limit, and nothing in the output
+said so.
 
 ---
 
