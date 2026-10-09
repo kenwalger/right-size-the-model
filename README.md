@@ -2,7 +2,8 @@
     <img src="img/logo.png" alt="Right Size the Model: three progressively larger chips, with the smallest marked as sufficient" width="340">
 </p>
 
-# Pi SLM experiment kit
+# Right Size the Model
+_Pi SLM experiment kit_
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Python 3](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
