@@ -56,7 +56,7 @@ only thing that shows the predictions came first.
 ```bash
 ollama pull smollm2:360m
 ollama pull qwen2.5:1.5b
-ollama list            # record the digests in PREDICTIONS.md
+ollama list            # record the digests in your runs/ predictions copy
 ```
 
 Those two are a sensible starting lineup, one sub-1B and one in the 1 to 2B
@@ -93,9 +93,10 @@ python3 scripts/run.py qa             qwen2.5:1.5b
 Six runs. Classification is 50 calls each and QA sends the whole corpus every
 time, so the QA runs are the slow ones. Start them and go do something else.
 
-Each record prints its fixture id as it runs. A call that fails prints why
-and the run continues, so one bad case does not cost you the other
-twenty-nine.
+Each record prints its fixture id and its generation speed in tokens per
+second as it runs. A call that fails prints why and the run continues, so one
+bad case does not cost you the other twenty-nine. Watch the tokens per
+second: a steady drift downward across a run means the board is throttling.
 
 **5. Score.**
 
@@ -197,6 +198,25 @@ down, the tag was wrong, the request timed out. Nothing was measured, so
 these are excluded from the scores and the run is reported as incomplete.
 Fix them and run again before quoting any number from that run.
 
+## Check the thermals, and keep the reading
+
+On a Pi, run `vcgencmd get_throttled` before a run and again after.
+
+`throttled=0x0` after a full run means the cooling held and the latency
+numbers describe the model. Anything else means they partly describe a CPU
+being clocked down, and that belongs in the write-up rather than being
+quietly dropped.
+
+This is not optional advice. On a passively cooled Pi 4 with heatsinks and
+no fan, a thirty-call run of a 360M model was enough to hit the soft
+temperature limit and start capping the clock. Nothing in Ollama's output,
+the scorer, or the result files said so. Every number on screen looked
+internally consistent, and the only way to find out was to ask the firmware
+a question you have to already suspect the answer to.
+
+The scorer's decay check exists because of that run. It will flag the shape
+in the data, but the firmware reading is the confirmation.
+
 ## Notes
 
 The fixtures are a fictional small winery, chosen so the classification
@@ -205,14 +225,6 @@ without looking anything up. Nothing in them is real.
 
 Do not edit a fixture after seeing a model fail it. If a fixture turns out to
 be genuinely wrong, fix it, note the change, and re-run every model.
-
-Check `vcgencmd get_throttled` before and after a run on a Pi, and keep
-the reading. `0x0` means the cooling held and the latency numbers describe
-the model. Anything else means they partly describe a CPU being clocked
-down, and it belongs in the write-up. This is not optional advice: on a
-passively cooled Pi 4 with heatsinks, a thirty-call run of a 360M model
-was enough to hit the soft temperature limit, and nothing in the output
-said so.
 
 ---
 
