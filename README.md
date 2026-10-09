@@ -41,7 +41,7 @@ write down exactly what you used.
 python3 scripts/run.py extraction regex
 ```
 
-Expect 30/30. The regex is in `run.py` as `ORDER_RE` and the fixtures were
+Expect 30/30. The regex is in `scripts/run.py` as `ORDER_RE` and the fixtures were
 built for it. The interesting question is whether a model can match it.
 
 **4. Run each workflow against each model.**
@@ -78,7 +78,7 @@ that unexpectedly wanted the network.
 
 Optional, and first on the cut list. If you want it, point the runner at an
 OpenAI-compatible endpoint by setting `OLLAMA_HOST`, or add a branch to
-`run.py`. The article works with two local models and a stated absence.
+`scripts/run.py`. The article works with two local models and a stated absence.
 
 ## What the scorer reports, and why
 

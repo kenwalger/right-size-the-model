@@ -48,7 +48,7 @@ hardware and model versions recorded are not comparable to anything.
 
 ## Code
 
-`run.py` and `score.py` are standard library only, so the kit runs on a Pi
+`scripts/run.py` and `scripts/score.py` are standard library only, so the kit runs on a Pi
 with nothing installed beyond Ollama. Please keep it that way.
 
 Changes to scoring need care: a change to how abstention is detected changes

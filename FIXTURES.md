@@ -25,7 +25,7 @@ a version attached.
 
 ## What is in the set
 
-### `extraction.jsonl`: 30 cases
+### `fixtures/extraction.jsonl`: 30 cases
 
 Find an order number of the form `ORD-` followed by exactly six digits, or
 report that there isn't one.
@@ -44,7 +44,7 @@ file exists for.
 
 Expected output is the canonical uppercase form, or null.
 
-### `classification.jsonl`: 50 cases
+### `fixtures/classification.jsonl`: 50 cases
 
 Short messages to a small business, each belonging to exactly one of six
 categories: `appointment`, `billing`, `availability`, `complaint`,
@@ -69,7 +69,7 @@ I cannot tell."
 tell what it is about. That definition is in the prompt, so a model that
 escalates when unsure is following instructions rather than failing.
 
-### `grounded-qa.jsonl` and `corpus/`: 15 questions, 4 documents
+### `fixtures/grounded-qa.jsonl` and `corpus/`: 15 questions, 4 documents
 
 The corpus is four short documents about a fictional small winery: club
 policy, tasting room, 2024 production notes, shipping.
