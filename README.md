@@ -41,12 +41,19 @@ write down exactly what you used.
 python3 scripts/run.py extraction regex
 ```
 
-Expect 30/30. The regex is in `scripts/run.py` as `ORDER_RE` and the fixtures were
+Expect 30/30. The regex is in `run.py` as `ORDER_RE` and the fixtures were
 built for it. The interesting question is whether a model can match it.
 
 **4. Run each workflow against each model.**
 
+On slow hardware this takes well over an hour, so run it inside `tmux` or
+`screen`. An SSH session that drops takes the run with it. Raise the timeout
+too; the default is sized for a fast machine:
+
 ```bash
+tmux new -s run
+export TIMEOUT=600
+
 python3 scripts/run.py extraction     smollm2:360m
 python3 scripts/run.py extraction     qwen2.5:1.5b
 python3 scripts/run.py classification smollm2:360m
@@ -57,6 +64,10 @@ python3 scripts/run.py qa             qwen2.5:1.5b
 
 Six runs. Classification is 50 calls each and QA sends the whole corpus every
 time, so the QA runs are the slow ones. Start them and go do something else.
+
+Each record prints its fixture id as it runs. A call that fails prints why
+and the run continues, so one bad case does not cost you the other
+twenty-nine.
 
 **5. Score.**
 
@@ -78,7 +89,7 @@ that unexpectedly wanted the network.
 
 Optional, and first on the cut list. If you want it, point the runner at an
 OpenAI-compatible endpoint by setting `OLLAMA_HOST`, or add a branch to
-`scripts/run.py`. The article works with two local models and a stated absence.
+`run.py`. The article works with two local models and a stated absence.
 
 ## What the scorer reports, and why
 
@@ -96,6 +107,23 @@ matrix shows which classes bleed into which.
 secondary. A system that invents a plausible answer with no evidence is worse
 than one that fails loudly, because it is indistinguishable from one that
 worked.
+
+## Two kinds of failure
+
+Not every error is the same thing, and conflating them would misreport a
+model. The runner tags each failure and the scorer treats them differently.
+
+**Model failure.** The model ran and produced nothing usable. Ollama aborting
+a prediction that fell into a repetition loop is the common case. This is a
+result: it stays in the denominator, counts against the model, and is listed
+on its own line as "no usable answer". Dropping these would quietly discard
+exactly the cases a model cannot handle, and score it only on the ones it
+could.
+
+**Transport failure.** The call never reached a working model. Ollama was
+down, the tag was wrong, the request timed out. Nothing was measured, so
+these are excluded from the scores and the run is reported as incomplete.
+Fix them and run again before quoting any number from that run.
 
 ## Notes
 

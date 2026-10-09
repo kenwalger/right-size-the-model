@@ -168,7 +168,54 @@ SD card. Both scoped models fit in 4GB comfortably, so swap should never be
 touched. If a model does start swapping, the honest result is that it does
 not fit on this hardware, not that it runs slowly with a workaround.
 
-## 9. Getting results back
+## 9. Run it
+
+The run is roughly ninety minutes over SSH. If the laptop sleeps or the
+connection drops, the session dies and takes the run with it, so do it inside
+tmux:
+
+```bash
+sudo apt install -y tmux
+tmux new -s run
+```
+
+Detach with `Ctrl-b` then `d`, reattach with `tmux attach -t run`.
+
+Inside that session:
+
+```bash
+cd ~/right-size-the-model
+export TIMEOUT=600
+
+python3 scripts/run.py extraction     smollm2:360m
+python3 scripts/run.py extraction     qwen2.5:1.5b
+python3 scripts/run.py classification smollm2:360m
+python3 scripts/run.py classification qwen2.5:1.5b
+python3 scripts/run.py qa             smollm2:360m
+python3 scripts/run.py qa             qwen2.5:1.5b
+```
+
+Fastest first. The regex baseline is already recorded from step 7.
+
+Watch the first run finish before walking away: a wrong model tag or an
+unreachable Ollama shows up there. After that, detach.
+
+Each record prints its fixture id as it goes, and a call that fails prints
+why and lets the run continue. Two kinds of failure are reported, and they
+mean different things. A **model** failure means the model ran and produced
+nothing usable, which counts against it. A **transport** failure means the
+call never reached a working model, which makes the run incomplete and needs
+fixing before the numbers mean anything.
+
+Then score:
+
+```bash
+python3 scripts/score.py
+python3 scripts/score.py --csv > results/summary.csv
+vcgencmd get_throttled
+```
+
+## 10. Getting results back
 
 Everything runs on the Pi and writes to `results/` there. To bring the files
 to the laptop afterwards, from PowerShell:

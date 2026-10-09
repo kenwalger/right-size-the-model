@@ -65,7 +65,25 @@ PROMPTS = {
 
 
 class OllamaError(RuntimeError):
-    """An Ollama call that failed, carrying whatever the server actually said."""
+    """An Ollama call that failed, carrying whatever the server actually said.
+
+    `kind` separates two very different things that both arrive as exceptions:
+
+    "transport"  the call never reached a working model. Ollama was down, the
+                 model was missing, the request timed out, the reply was
+                 malformed. Nothing was measured, so these are excluded from
+                 scores and mark the run incomplete.
+
+    "model"      the model ran and failed to produce a usable answer. Ollama
+                 returned 5xx from the generate endpoint, for instance when it
+                 aborts a prediction that fell into a repetition loop. This IS
+                 a result. Excluding it would quietly drop the cases a model
+                 cannot handle and flatter its score.
+    """
+
+    def __init__(self, message, kind):
+        super().__init__(message)
+        self.kind = kind
 
 
 def ollama(model, prompt):
@@ -93,13 +111,17 @@ def ollama(model, prompt):
             detail = e.read().decode("utf-8", "replace").strip()
         except Exception:
             detail = "(no response body)"
-        raise OllamaError(f"HTTP {e.code} from Ollama: {detail[:1000]}") from None
+        # A 5xx from the generate endpoint means the model ran and the
+        # generation failed. A 4xx means the request or the setup was wrong
+        # and no model ever ran.
+        kind = "model" if 500 <= e.code < 600 else "transport"
+        raise OllamaError(f"HTTP {e.code} from Ollama: {detail[:1000]}", kind) from None
     except urllib.error.URLError as e:
-        raise OllamaError(f"Could not reach Ollama at {HOST}: {e.reason}") from None
+        raise OllamaError(f"Could not reach Ollama at {HOST}: {e.reason}", "transport") from None
     except TimeoutError:
-        raise OllamaError(f"No reply within TIMEOUT={TIMEOUT}s") from None
+        raise OllamaError(f"No reply within TIMEOUT={TIMEOUT}s", "transport") from None
     except (KeyError, json.JSONDecodeError) as e:
-        raise OllamaError(f"Unexpected reply shape from Ollama: {e}") from None
+        raise OllamaError(f"Unexpected reply shape from Ollama: {e}", "transport") from None
 
 
 def parse_extraction(reply):
@@ -149,7 +171,7 @@ def main():
     workflow, model = sys.argv[1], sys.argv[2]
     OUT.mkdir(exist_ok=True)
     records = []
-    errors = 0
+    errors = {"transport": 0, "model": 0}
 
     if workflow == "extraction":
         rows = load("extraction.jsonl")
@@ -164,9 +186,10 @@ def main():
                     reply = ollama(model, PROMPTS["extraction"].format(input=r["input"]))
                     rec = {**r, "raw": reply, "answer": parse_extraction(reply)}
                 except OllamaError as e:
-                    errors += 1
-                    print(f"      FAILED: {e}", file=sys.stderr, flush=True)
-                    rec = {**r, "raw": "", "answer": None, "error": str(e)}
+                    errors[e.kind] += 1
+                    print(f"      FAILED ({e.kind}): {e}", file=sys.stderr, flush=True)
+                    rec = {**r, "raw": "", "answer": None,
+                           "error": str(e), "error_kind": e.kind}
             rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
             records.append(rec)
 
@@ -182,9 +205,10 @@ def main():
                 reply = ollama(model, PROMPTS["classification"].format(input=r["input"]))
                 rec = {**r, "raw": reply, "answer": parse_label(reply)}
             except OllamaError as e:
-                errors += 1
-                print(f"      FAILED: {e}", file=sys.stderr, flush=True)
-                rec = {**r, "raw": "", "answer": "ERROR", "error": str(e)}
+                errors[e.kind] += 1
+                print(f"      FAILED ({e.kind}): {e}", file=sys.stderr, flush=True)
+                rec = {**r, "raw": "", "answer": "ERROR",
+                       "error": str(e), "error_kind": e.kind}
             rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
             records.append(rec)
 
@@ -203,9 +227,10 @@ def main():
                 )
                 rec = {**r, "raw": reply, "answer": reply}
             except OllamaError as e:
-                errors += 1
-                print(f"      FAILED: {e}", file=sys.stderr, flush=True)
-                rec = {**r, "raw": "", "answer": "", "error": str(e)}
+                errors[e.kind] += 1
+                print(f"      FAILED ({e.kind}): {e}", file=sys.stderr, flush=True)
+                rec = {**r, "raw": "", "answer": "",
+                       "error": str(e), "error_kind": e.kind}
             rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
             records.append(rec)
 
@@ -234,9 +259,16 @@ def main():
     print(f"\n{len(records)} records -> {path.name}")
     if lat:
         print(f"latency ms: median {lat[len(lat) // 2]:.0f}, max {lat[-1]:.0f}")
-    if errors:
-        print(f"{errors} of {len(records)} calls FAILED. Those records carry an 'error' field.")
-        print("The run is incomplete; see the failures above before scoring.")
+    if errors["model"]:
+        print(
+            f"{errors['model']} of {len(records)} calls produced NO USABLE ANSWER. "
+            "The model ran and failed; these count against it."
+        )
+    if errors["transport"]:
+        print(
+            f"{errors['transport']} of {len(records)} calls never reached a working model. "
+            "The run is incomplete; fix these and run again before scoring."
+        )
 
 
 if __name__ == "__main__":

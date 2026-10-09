@@ -10,8 +10,14 @@ scored automatically for abstention, which is the part that matters, and
 flagged for your eyes on the rest. Read the answers yourself; a keyword
 check is not comprehension.
 
-Records that carry an 'error' field are counted and reported separately.
-A failed call is not a wrong answer and must not be scored as one.
+Two kinds of failure are handled differently, and the distinction matters:
+
+  transport  the call never reached a working model. Excluded from the
+             scores, and the run is reported as incomplete.
+  model      the model ran and produced no usable answer, for instance a
+             prediction Ollama aborted for repetition. Counted against the
+             model on a line of its own. Dropping these would quietly
+             discard the cases a model cannot handle.
 """
 
 import json
@@ -39,68 +45,91 @@ def pct(n, d):
     return f"{100.0 * n / d:.0f}%" if d else "n/a"
 
 
-def split_errors(recs):
-    """Separate failed calls from answered ones. Failures are not wrong answers."""
-    ok = [r for r in recs if not r.get("error")]
-    bad = [r for r in recs if r.get("error")]
-    return ok, bad
+def split(recs):
+    """Answered, model failures, transport failures.
+
+    Model failures stay in the denominator. Transport failures do not: nothing
+    was measured, so counting them would be reporting a number that was never
+    taken.
+    """
+    answered = [r for r in recs if not r.get("error")]
+    failed_model = [r for r in recs if r.get("error_kind") == "model"]
+    failed_transport = [r for r in recs if r.get("error_kind") == "transport"]
+    # Older result files have no error_kind; treat them as transport.
+    legacy = [r for r in recs if r.get("error") and not r.get("error_kind")]
+    return answered, failed_model, failed_transport + legacy
 
 
-def report_errors(bad, total):
-    if not bad:
-        return
-    print(f"  !! {len(bad)}/{total} calls FAILED and are excluded from the scores below")
-    seen = Counter(r["error"][:80] for r in bad)
-    for msg, n in seen.most_common(3):
-        print(f"     {n}x {msg}")
-    for r in bad[:5]:
-        print(f"     {r['id']}")
+def report_failures(no_answer, unreachable, total):
+    if no_answer:
+        print(f"  no usable answer  {len(no_answer)}/{total}   <- counts against the model")
+        for r in no_answer:
+            reason = r["error"].split(":", 1)[-1].strip()[:90]
+            print(f"    {r['id']}  {reason}")
+    if unreachable:
+        print(f"  !! {len(unreachable)}/{total} calls never reached a working model")
+        for msg, n in Counter(r["error"][:80] for r in unreachable).most_common(3):
+            print(f"     {n}x {msg}")
+        print("     These are excluded. The run is incomplete.")
 
 
 def score_extraction(data):
-    recs, bad = split_errors(data["records"])
-    report_errors(bad, len(data["records"]))
-    if not recs:
+    recs = data["records"]
+    answered, no_answer, unreachable = split(recs)
+    scored = answered + no_answer
+    report_failures(no_answer, unreachable, len(recs))
+    if not scored:
         return 0, 0
-    right = sum(1 for r in recs if (r["answer"] or None) == (r["expected"] or None))
-    present = [r for r in recs if r["expected"]]
-    absent = [r for r in recs if not r["expected"]]
-    decoys = [r for r in recs if r["note"].startswith("decoy")]
-    invented = [r for r in absent if r["answer"]]
-    print(f"  overall      {right}/{len(recs)}  {pct(right, len(recs))}")
-    print(f"  present      {sum(1 for r in present if r['answer'] == r['expected'])}/{len(present)}")
+    right = sum(1 for r in answered if (r["answer"] or None) == (r["expected"] or None))
+    present = [r for r in scored if r["expected"]]
+    absent = [r for r in scored if not r["expected"]]
+    decoys = [r for r in scored if r["note"].startswith("decoy")]
+    invented = [r for r in answered if not r["expected"] and r["answer"]]
+    declined = [r for r in answered if not r["expected"] and not r["answer"]]
+    print(f"  overall      {right}/{len(scored)}  {pct(right, len(scored))}")
     print(
-        f"  absent       {sum(1 for r in absent if not r['answer'])}/{len(absent)}  "
-        f"(invented an answer {len(invented)} times)"
+        f"  present      "
+        f"{sum(1 for r in answered if r['expected'] and r['answer'] == r['expected'])}"
+        f"/{len(present)}"
     )
-    print(f"  decoys       {sum(1 for r in decoys if not r['answer'])}/{len(decoys)}")
+    print(
+        f"  absent       {len(declined)}/{len(absent)} declined correctly  "
+        f"(invented {len(invented)}, no usable answer "
+        f"{sum(1 for r in no_answer if not r['expected'])})"
+    )
+    print(
+        f"  decoys       "
+        f"{sum(1 for r in decoys if not r.get('error') and not r['answer'])}/{len(decoys)}"
+    )
     for r in invented:
         print(f"    INVENTED  {r['id']}: {r['answer']!r}  <- {r['note']}")
-    return right, len(recs)
+    return right, len(scored)
 
 
 def score_classification(data):
-    recs, bad = split_errors(data["records"])
-    report_errors(bad, len(data["records"]))
-    if not recs:
+    recs = data["records"]
+    answered, no_answer, unreachable = split(recs)
+    scored = answered + no_answer
+    report_failures(no_answer, unreachable, len(recs))
+    if not scored:
         return 0, 0
-    right = sum(1 for r in recs if r["answer"] == r["expected"])
-    invalid = [r for r in recs if str(r["answer"]).startswith("INVALID")]
+    right = sum(1 for r in answered if r["answer"] == r["expected"])
+    invalid = [r for r in answered if str(r["answer"]).startswith("INVALID")]
     confident_wrong = [
         r
-        for r in recs
+        for r in answered
         if r["answer"] != r["expected"]
         and not str(r["answer"]).startswith("INVALID")
         and r["answer"] != "escalate"
     ]
-    ambiguous = [r for r in recs if r["note"].startswith(("ambiguous", "borderline"))]
-    amb_right = sum(1 for r in ambiguous if r["answer"] == r["expected"])
-    print(f"  overall          {right}/{len(recs)}  {pct(right, len(recs))}")
-    print(f"  invalid output   {len(invalid)}")
+    ambiguous = [r for r in scored if r["note"].startswith(("ambiguous", "borderline"))]
+    amb_right = sum(1 for r in answered if r in ambiguous and r["answer"] == r["expected"])
+    print(f"  overall          {right}/{len(scored)}  {pct(right, len(scored))}")
+    print(f"  invalid output   {len(invalid)}   (a reply that is not one of the six labels)")
     print(f"  confident wrong  {len(confident_wrong)}   <- the number that matters")
     print(f"  ambiguous cases  {amb_right}/{len(ambiguous)}")
     conf = defaultdict(Counter)
-    for r in recs:
+    for r in scored:
         conf[r["expected"]][r["answer"]] += 1
     print("  confusion (expected -> got):")
     for exp in sorted(conf):
@@ -111,37 +140,51 @@ def score_classification(data):
             f"    WRONG  {r['id']}  exp {r['expected']:<12} got {r['answer']:<12} "
             f"{r['input'][:48]!r}"
         )
-    return right, len(recs)
+    return right, len(scored)
 
 
 def score_qa(data):
-    recs, bad = split_errors(data["records"])
-    report_errors(bad, len(data["records"]))
-    if not recs:
+    recs = data["records"]
+    answered, no_answer, unreachable = split(recs)
+    report_failures(no_answer, unreachable, len(recs))
+    scored = answered + no_answer
+    if not scored:
         return 0, 0
-    absent = [r for r in recs if r["kind"] == "absent"]
-    answerable = [r for r in recs if r["kind"] != "absent"]
+    absent = [r for r in scored if r["kind"] == "absent"]
+    answerable = [r for r in scored if r["kind"] != "absent"]
 
     def abstained(r):
+        if r.get("error"):
+            return False
         low = (r["answer"] or "").lower()
         return any(m in low for m in ABSTAIN_MARKERS)
 
     correct_abstain = [r for r in absent if abstained(r)]
-    fabricated = [r for r in absent if not abstained(r)]
+    no_answer_absent = [r for r in absent if r.get("error")]
+    fabricated = [r for r in absent if not abstained(r) and not r.get("error")]
     over_abstain = [r for r in answerable if abstained(r)]
     keyword_hit = [
         r
         for r in answerable
         if not abstained(r)
+        and not r.get("error")
         and (
             not r["must_contain_any"]
             or any(k.lower() in (r["answer"] or "").lower() for k in r["must_contain_any"])
         )
     ]
-    print(f"  abstained correctly  {len(correct_abstain)}/{len(absent)}   <- the number that matters")
+    print(
+        f"  abstained correctly  {len(correct_abstain)}/{len(absent)}"
+        "   <- the number that matters"
+    )
     print(f"  fabricated           {len(fabricated)}/{len(absent)}")
+    if no_answer_absent:
+        print(f"  no usable answer     {len(no_answer_absent)}/{len(absent)}  (neither, see above)")
     print(f"  over-abstained       {len(over_abstain)}/{len(answerable)}")
-    print(f"  keyword present      {len(keyword_hit)}/{len(answerable)}  (indicative only, read them)")
+    print(
+        f"  keyword present      {len(keyword_hit)}/{len(answerable)}"
+        "  (indicative only, read them)"
+    )
     for r in fabricated:
         print(f"    FABRICATED  {r['id']}: {r['question']}")
         print(f"                {(r['answer'] or '').strip()[:160]}")
@@ -168,21 +211,24 @@ def main():
             n, d = score_classification(data)
         else:
             n, d = score_qa(data)
-        failed = sum(1 for r in data["records"] if r.get("error"))
-        rows.append((data["workflow"], data["model"], n, d, med, failed))
+        _, no_answer, unreachable = split(data["records"])
+        rows.append((data["workflow"], data["model"], n, d, med, len(no_answer), len(unreachable)))
 
     print("\n=== summary")
-    print(f"{'workflow':<16}{'model':<22}{'score':<10}{'median ms':>10}{'failed':>9}")
-    for w, m, n, d, med, failed in rows:
-        print(f"{w:<16}{m:<22}{f'{n}/{d}':<10}{med:>10.0f}{failed:>9}")
-    if any(r[5] for r in rows):
-        print("\nSome calls failed. Those runs are incomplete and the scores above")
-        print("are computed over the calls that succeeded only.")
+    print(
+        f"{'workflow':<16}{'model':<22}{'score':<10}{'median ms':>10}"
+        f"{'no answer':>11}{'unreached':>11}"
+    )
+    for w, m, n, d, med, na, un in rows:
+        print(f"{w:<16}{m:<22}{f'{n}/{d}':<10}{med:>10.0f}{na:>11}{un:>11}")
+    if any(r[6] for r in rows):
+        print("\nSome calls never reached a working model. Those runs are incomplete")
+        print("and their scores are computed over the calls that ran.")
 
     if "--csv" in sys.argv:
-        print("\nworkflow,model,score,total,median_ms,failed")
-        for w, m, n, d, med, failed in rows:
-            print(f"{w},{m},{n},{d},{med:.0f},{failed}")
+        print("\nworkflow,model,score,total,median_ms,no_answer,unreached")
+        for w, m, n, d, med, na, un in rows:
+            print(f"{w},{m},{n},{d},{med:.0f},{na},{un}")
 
 
 if __name__ == "__main__":
