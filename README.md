@@ -7,7 +7,7 @@ without installing anything beyond Ollama and the models.
 ```text
 fixtures/
   extraction.jsonl       30 cases: 22 with an order number, 5 without, 3 decoys
-  classification.jsonl   50 messages across 6 labels, 14 ambiguous or borderline
+  classification.jsonl   50 messages across 6 labels, 16 ambiguous or borderline
   grounded-qa.jsonl      15 questions: 8 single-passage, 3 two-passage, 4 unanswerable
   corpus/                4 short documents the QA questions are asked against
 scripts/
