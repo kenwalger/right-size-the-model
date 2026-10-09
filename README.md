@@ -23,15 +23,33 @@ fixtures/
 scripts/
   run.py                 runs one workflow against one model, writes raw results
   score.py               scores everything in results/ and prints the article's numbers
+  offline_test.sh        switches the radio off and proves inference still works
+  offline_probe.py       the three calls offline_test.sh makes; not part of scoring
 results/                 output, one JSON per workflow and model
-PREDICTIONS.md           fill this in before installing anything
+img/                     project related images
+runs/                    one directory per run: its predictions, results and notes
+PREDICTIONS.md           blank template, copied into runs/ and filled in first
+SETUP.md                 blank SD card to a working Pi
+FIXTURES.md              what is in the fixture set, and the rule against editing it
+LIMITATIONS.md           what these numbers do not support
+CONTRIBUTING.md          how to add fixtures or send your own results
 ```
 
 ## Order of operations
 
-**1. Fill in PREDICTIONS.md.** Before Ollama, before models, before anything.
+**1. Fill in your predictions.** Before Ollama, before models, before
+anything.
+
+```bash
+mkdir -p runs/$(date +%F)-mydevice
+cp PREDICTIONS.md runs/$(date +%F)-mydevice/predictions.md
+# fill that copy in, then commit it
+```
+
 This is the step that keeps the weekend a weekend: once you are measuring
-against a committed expectation, there is a defined moment when you are done.
+against a committed expectation, there is a defined moment when you are
+done. Commit it before you install anything, because the timestamp is the
+only thing that shows the predictions came first.
 
 **2. Pull the models and record their exact tags.**
 
@@ -91,9 +109,25 @@ automatically, which is the number that matters, and does a keyword check on
 the rest. A keyword check is not comprehension. Open the result files and
 read what the models actually said.
 
-**7. Pull the cable.** Disable wifi, unplug ethernet, confirm no route out,
-then re-run one case from each workflow. Record what still works and anything
-that unexpectedly wanted the network.
+**7. Pull the cable.**
+
+```bash
+sudo scripts/offline_test.sh
+```
+
+Switches the radio off, proves there is no route out, runs one call from
+each workflow, switches it back on. Works over SSH on a headless machine:
+the session freezes while the radio is down and resumes when it returns, and
+a dead man's switch re-enables the radio after fifteen minutes whatever
+happens to the script, so a crash cannot strand a Pi with no network and no
+monitor.
+
+Unplug any ethernet cable first. The script checks, and refuses to report a
+result if something is still carrying traffic.
+
+It runs three calls rather than ninety-five, because the question is whether
+inference needs the network, not how well the models score. Nothing it does
+touches `results/`.
 
 ## Hosted reference
 

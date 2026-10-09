@@ -217,7 +217,32 @@ python3 scripts/score.py --csv > results/summary.csv
 vcgencmd get_throttled
 ```
 
-## 10. Getting results back
+That last reading is a result too. `throttled=0x0` after a full run means
+the cooling held and the latency numbers describe the model. Anything else
+means they partly describe a CPU being clocked down, and it belongs in the
+write-up rather than being quietly ignored.
+
+## 10. The offline test
+
+```bash
+sudo scripts/offline_test.sh
+```
+
+Switches the radio off, proves there is no route out, runs one call from
+each workflow, switches it back on. No monitor needed: your SSH session
+freezes while the radio is down and resumes when it comes back, and a dead
+man's switch re-enables the radio after fifteen minutes whatever happens to
+the script.
+
+Unplug any ethernet cable first, or the Pi still has a route out and the
+result means nothing. The script checks for this and refuses rather than
+reporting a false pass.
+
+Record what it prints. "Inference ran with no route to the internet" is a
+claim about this configuration on this afternoon, not a general claim about
+local models being private, and the write-up should say it that way.
+
+## 11. Getting results back
 
 Everything runs on the Pi and writes to `results/` there. To bring the files
 to the laptop afterwards, from PowerShell:
