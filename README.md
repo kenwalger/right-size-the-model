@@ -1,4 +1,6 @@
-<img src="img/logo.png" width=200>
+<p align="center">
+    <img src="img/logo.png" alt="Right Size the Model: three progressively larger chips, with the smallest marked as sufficient" width="340">
+</p>
 
 # Pi SLM experiment kit
 
