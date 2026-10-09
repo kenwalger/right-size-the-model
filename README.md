@@ -173,3 +173,7 @@ be genuinely wrong, fix it, note the change, and re-run every model.
 
 Record CPU temperature if it is convenient, but it is not load-bearing and is
 on the cut list.
+
+---
+
+_Logo generated with AI. Whether the rest of this project needs AI is under investigation._
