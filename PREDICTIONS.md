@@ -74,18 +74,18 @@ apart afterwards.
 
 ## Setup, recorded at the start
 
-| Field | Value |
-| --- | --- |
-| Pi model | |
-| RAM | |
-| Storage | |
-| Cooling | |
-| OS and version | |
-| Ollama version | |
-| Models, exact tags and digests | |
-| Quantisation, if not the Ollama default | |
-| Total hardware cost | |
-| Date run | |
+| Field                                   | Value           |
+|-----------------------------------------|-----------------|
+| Pi model                                | 4               |
+| RAM                                     | 4 GB            |
+| Storage                                 | 32 GB           |
+| Cooling                                 | Heat Sink + fan |
+| OS and version                          |                 |
+| Ollama version                          |                 |
+| Models, exact tags and digests          |                 |
+| Quantisation, if not the Ollama default |                 |
+| Total hardware cost                     | $169.99 USD     |
+| Date run                                |                 |
 
 ---
 
@@ -94,59 +94,59 @@ apart afterwards.
 The regex scores 30 out of 30 by construction. The fixtures were built for it.
 The question is entirely about the models.
 
-| Prediction | Your call | Confidence | Actual |
-| --- | --- | --- | --- |
-| Will any model match the regex? | none / only the biggest / all of them | | |
-| Small model on the 22 straightforward cases | below half / most / nearly all | | |
-| Small model on the 8 absent cases: does it invent an order number? | never / sometimes / usually | | |
-| Small model on the 3 decoys (membership number, UPS tracking, phone number) | falls for none / some / all | | |
-| Which decoy defeats the most models? | MEM- / tracking / phone | | |
-| Will the lowercase cases cause trouble? | yes / no | | |
-| Ordering: does the bigger local model beat the smaller? | yes / no / same | | |
+| Prediction                                                                  | Your call        | Confidence | Actual |
+|-----------------------------------------------------------------------------|------------------|------------|--------|
+| Will any model match the regex?                                             | only the biggest | leaning    |        |
+| Small model on the 22 straightforward cases                                 | most             | confident  |        |
+| Small model on the 8 absent cases: does it invent an order number?          | usually          | coin-flip  |        |
+| Small model on the 3 decoys (membership number, UPS tracking, phone number) | some             | leaning    |        |
+| Which decoy defeats the most models?                                        | tracking         | leaning    |        |
+| Will the lowercase cases cause trouble?                                     | no               | coin-flip  |        |
+| Ordering: does the bigger local model beat the smaller?                     | yes              | leaning    |        |
 
 ## Workflow 1, classification
 
-Fifty messages, six labels, fourteen of them deliberately ambiguous or
+Fifty messages, six labels, sixteen of them deliberately ambiguous or
 borderline.
 
-| Prediction | Your call | Confidence | Actual |
-| --- | --- | --- | --- |
-| Small model, overall | below half / half to three quarters / above three quarters | | |
-| Mid model, overall | below half / half to three quarters / above three quarters | | |
-| Does the small model produce invalid output, meaning not one of the six labels? | never / occasionally / often | | |
-| When unsure, does it escalate or guess? | escalates / guesses | | |
-| Confident wrong, meaning wrong and not an escalation | rare / common | | |
-| Which class gets over-predicted? | pick one | | |
-| Which two classes bleed into each other? | pick two | | |
-| On the fourteen ambiguous cases, any model better than chance? | yes / no | | |
+| Prediction                                                                      | Your call              | Confidence | Actual |
+|---------------------------------------------------------------------------------|------------------------|------------|--------|
+| Small model, overall                                                            | below half             | leaning    |        |
+| Mid model, overall                                                              | half to three quarters | leaning    |        |
+| Does the small model produce invalid output, meaning not one of the six labels? | often                  | confident  |        |
+| When unsure, does it escalate or guess?                                         | guess                  | leaning    |        |
+| Confident wrong, meaning wrong and not an escalation                            | common                 | confident  |        |
+| Which class gets over-predicted?                                                | availability           | coin-flip  |        |
+| Which two classes bleed into each other?                                        | question escalate      | coin-flip  |        |
+| On the sixteen ambiguous cases, any model better than chance?                   | yes                    | confident  |        |
 
 ## Workflow 5, grounded question answering
 
 Fifteen questions. Four of them have no answer in the corpus. Those four are
 the test.
 
-| Prediction | Your call | Confidence | Actual |
-| --- | --- | --- | --- |
-| Small model, abstentions out of 4 | none / some / all | | |
-| Mid model, abstentions out of 4 | none / some / all | | |
-| When a model fabricates, is the answer plausible or obviously wrong? | plausible / obvious | | |
-| Does any model over-abstain on an answerable question? | yes / no | | |
-| The three two-passage questions | all fail / some / all fine | | |
-| Which single question defeats everything? | pick one by id | | |
+| Prediction                                                           | Your call | Confidence | Actual |
+|----------------------------------------------------------------------|-----------|------------|--------|
+| Small model, abstentions out of 4                                    | some      | leaning    |        |
+| Mid model, abstentions out of 4                                      | some      | confident  |        |
+| When a model fabricates, is the answer plausible or obviously wrong? | plausible | confident  |        |
+| Does any model over-abstain on an answerable question?               | yes       | leaning    |        |
+| The three two-passage questions                                      | some      | confident  |        |
+| Which single question defeats everything?                            | qa10      | coin-flip  |        |
 
 ## Offline
 
-| Prediction | Your call | Confidence | Actual |
-| --- | --- | --- | --- |
-| Does anything break when the network is pulled? | yes / no | | |
-| If yes, what | | | |
+| Prediction                                      | Your call                                         | Confidence | Actual |
+|-------------------------------------------------|---------------------------------------------------|------------|--------|
+| Does anything break when the network is pulled? | yes                                               | leaning    |        |
+| If yes, what                                    | some dependency package that I didn't account for | leaning    |        |
 
 ## The one that matters
 
 **What do you expect to be surprised by?** One or two sentences, before you
 start.
 
-> 
+> That regex, established in the 1950's and 60's, is still pretty darn useful. Even when compared to SLMs in 2026.
 
 ---
 

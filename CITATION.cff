@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "right-size-the-model: a measurement kit for bounded language workloads"
+message: >-
+  If you publish numbers produced with these fixtures, please cite the
+  repository and state the fixture version you used.
+type: software
+authors:
+  - family-names: Alger
+    given-names: Ken W.
+repository-code: "https://github.com/kenwalger/right-size-the-model"
+abstract: >-
+  Fixtures, a runner and a scorer for measuring how much intelligence a
+  bounded language workload actually requires: a deterministic baseline,
+  closed-set classification, and grounded question answering including
+  questions the corpus does not answer.
+keywords:
+  - small language models
+  - local inference
+  - evaluation
+  - raspberry pi
+  - abstention
+license: MIT
