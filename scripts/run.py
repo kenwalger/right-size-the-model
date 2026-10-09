@@ -11,7 +11,9 @@ Talks to Ollama on http://localhost:11434 by default. Override with
 OLLAMA_HOST. Standard library only, so it runs on the Pi as-is.
 
 Writes results/<workflow>__<model>.json with one record per fixture:
-the input, the raw reply, the parsed answer, and the latency.
+the input, the raw reply, the parsed answer, and the latency. A call that
+fails records the error and the run continues, because a partial run with
+known holes is worth more than a traceback at fixture 7 of 30.
 
 Scoring happens in score.py. This script does not judge anything.
 """
@@ -29,7 +31,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIX = ROOT / "fixtures"
 OUT = ROOT / "results"
 HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-TIMEOUT = int(os.environ.get("TIMEOUT", "180"))
+TIMEOUT = int(os.environ.get("TIMEOUT", "600"))
 
 ORDER_RE = re.compile(r"\bORD-\d{6}\b", re.IGNORECASE)
 
@@ -62,7 +64,16 @@ PROMPTS = {
 }
 
 
+class OllamaError(RuntimeError):
+    """An Ollama call that failed, carrying whatever the server actually said."""
+
+
 def ollama(model, prompt):
+    """Call Ollama and return the reply text, or raise OllamaError with detail.
+
+    urllib raises HTTPError and discards the response body by default, which
+    is exactly where Ollama puts its reason. Read it before giving up.
+    """
     body = json.dumps(
         {
             "model": model,
@@ -74,8 +85,21 @@ def ollama(model, prompt):
     req = urllib.request.Request(
         f"{HOST}/api/generate", data=body, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-        return json.loads(r.read())["response"].strip()
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            return json.loads(r.read())["response"].strip()
+    except urllib.error.HTTPError as e:
+        try:
+            detail = e.read().decode("utf-8", "replace").strip()
+        except Exception:
+            detail = "(no response body)"
+        raise OllamaError(f"HTTP {e.code} from Ollama: {detail[:1000]}") from None
+    except urllib.error.URLError as e:
+        raise OllamaError(f"Could not reach Ollama at {HOST}: {e.reason}") from None
+    except TimeoutError:
+        raise OllamaError(f"No reply within TIMEOUT={TIMEOUT}s") from None
+    except (KeyError, json.JSONDecodeError) as e:
+        raise OllamaError(f"Unexpected reply shape from Ollama: {e}") from None
 
 
 def parse_extraction(reply):
@@ -99,7 +123,11 @@ def parse_label(reply):
 
 
 def load(name):
-    return [json.loads(l) for l in (FIX / name).read_text(encoding="utf-8").splitlines() if l.strip()]
+    return [
+        json.loads(l)
+        for l in (FIX / name).read_text(encoding="utf-8").splitlines()
+        if l.strip()
+    ]
 
 
 def corpus_text():
@@ -109,6 +137,11 @@ def corpus_text():
     return "\n\n".join(parts)
 
 
+def progress(i, total, fixture_id, note=""):
+    """One line per record, to stderr, so a failure names the fixture."""
+    print(f"  [{i}/{total}] {fixture_id} {note}", file=sys.stderr, flush=True)
+
+
 def main():
     if len(sys.argv) != 3:
         print(__doc__)
@@ -116,40 +149,65 @@ def main():
     workflow, model = sys.argv[1], sys.argv[2]
     OUT.mkdir(exist_ok=True)
     records = []
+    errors = 0
 
     if workflow == "extraction":
         rows = load("extraction.jsonl")
-        for r in rows:
+        for i, r in enumerate(rows, 1):
+            progress(i, len(rows), r["id"])
             t0 = time.perf_counter()
             if model == "regex":
                 m = ORDER_RE.search(r["input"])
-                answer, reply = (m.group(0).upper() if m else None), ""
+                rec = {**r, "raw": "", "answer": (m.group(0).upper() if m else None)}
             else:
-                reply = ollama(model, PROMPTS["extraction"].format(input=r["input"]))
-                answer = parse_extraction(reply)
-            records.append({**r, "raw": reply, "answer": answer,
-                            "ms": round((time.perf_counter() - t0) * 1000, 1)})
+                try:
+                    reply = ollama(model, PROMPTS["extraction"].format(input=r["input"]))
+                    rec = {**r, "raw": reply, "answer": parse_extraction(reply)}
+                except OllamaError as e:
+                    errors += 1
+                    print(f"      FAILED: {e}", file=sys.stderr, flush=True)
+                    rec = {**r, "raw": "", "answer": None, "error": str(e)}
+            rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            records.append(rec)
 
     elif workflow == "classification":
         if model == "regex":
             print("No deterministic baseline for classification. Skip it, and say so in the post.")
             sys.exit(1)
-        for r in load("classification.jsonl"):
+        rows = load("classification.jsonl")
+        for i, r in enumerate(rows, 1):
+            progress(i, len(rows), r["id"])
             t0 = time.perf_counter()
-            reply = ollama(model, PROMPTS["classification"].format(input=r["input"]))
-            records.append({**r, "raw": reply, "answer": parse_label(reply),
-                            "ms": round((time.perf_counter() - t0) * 1000, 1)})
+            try:
+                reply = ollama(model, PROMPTS["classification"].format(input=r["input"]))
+                rec = {**r, "raw": reply, "answer": parse_label(reply)}
+            except OllamaError as e:
+                errors += 1
+                print(f"      FAILED: {e}", file=sys.stderr, flush=True)
+                rec = {**r, "raw": "", "answer": "ERROR", "error": str(e)}
+            rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            records.append(rec)
 
     elif workflow == "qa":
         if model == "regex":
             print("No deterministic baseline for QA.")
             sys.exit(1)
         corpus = corpus_text()
-        for r in load("grounded-qa.jsonl"):
+        rows = load("grounded-qa.jsonl")
+        for i, r in enumerate(rows, 1):
+            progress(i, len(rows), r["id"], f"({r['kind']})")
             t0 = time.perf_counter()
-            reply = ollama(model, PROMPTS["qa"].format(corpus=corpus, question=r["question"]))
-            records.append({**r, "raw": reply, "answer": reply,
-                            "ms": round((time.perf_counter() - t0) * 1000, 1)})
+            try:
+                reply = ollama(
+                    model, PROMPTS["qa"].format(corpus=corpus, question=r["question"])
+                )
+                rec = {**r, "raw": reply, "answer": reply}
+            except OllamaError as e:
+                errors += 1
+                print(f"      FAILED: {e}", file=sys.stderr, flush=True)
+                rec = {**r, "raw": "", "answer": "", "error": str(e)}
+            rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            records.append(rec)
 
     else:
         print(f"Unknown workflow: {workflow}")
@@ -157,15 +215,28 @@ def main():
 
     safe = model.replace(":", "-").replace("/", "-")
     path = OUT / f"{workflow}__{safe}.json"
-    path.write_text(json.dumps(
-        {"workflow": workflow, "model": model, "host": HOST,
-         "when": time.strftime("%Y-%m-%dT%H:%M:%S"), "records": records},
-        indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            {
+                "workflow": workflow,
+                "model": model,
+                "host": HOST,
+                "when": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "errors": errors,
+                "records": records,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
     lat = sorted(r["ms"] for r in records)
-    print(f"{len(records)} records -> {path.name}")
+    print(f"\n{len(records)} records -> {path.name}")
     if lat:
-        print(f"latency ms: median {lat[len(lat)//2]:.0f}, max {lat[-1]:.0f}")
+        print(f"latency ms: median {lat[len(lat) // 2]:.0f}, max {lat[-1]:.0f}")
+    if errors:
+        print(f"{errors} of {len(records)} calls FAILED. Those records carry an 'error' field.")
+        print("The run is incomplete; see the failures above before scoring.")
 
 
 if __name__ == "__main__":

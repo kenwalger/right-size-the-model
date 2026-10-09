@@ -29,6 +29,29 @@ before citing anything here.
 | extraction | regex | 30/30 | 0 |
 | | | | |
 
+```text
+ python3 scripts/run.py extraction regex
+30 records -> extraction__regex.json
+latency ms: median 0, max 0
+kalger@cellar-pi:~/right-size-the-model $ python3 scripts/score.py
+
+=== extraction / regex (median 0 ms, max 0 ms)
+  overall      30/30  100%
+  present      22/22
+  absent       8/8  (invented an answer 0 times)
+  decoys       3/3
+
+=== summary
+workflow        model                 score      median ms
+extraction      regex                 30/30              0
+```
+
+```text
+kalger@cellar-pi:~/right-size-the-model $ ollama run smollm2:360m "Reply with the single word: ready"
+I am ready to assist you.
+```
+
+
 ## Workflow 0, extraction
 
 The regex scores 30/30 by construction; the fixtures were built for it.
