@@ -200,8 +200,10 @@ Fastest first. The regex baseline is already recorded from step 7.
 Watch the first run finish before walking away: a wrong model tag or an
 unreachable Ollama shows up there. After that, detach.
 
-Each record prints its fixture id as it goes, and a call that fails prints
-why and lets the run continue. Two kinds of failure are reported, and they
+Each record prints its fixture id and its generation speed in tokens per
+second as it goes, and a call that fails prints why and lets the run
+continue. Watch the tokens per second: if it drifts downward across a run,
+the board is throttling, and the scorer will say so afterwards. Two kinds of failure are reported, and they
 mean different things. A **model** failure means the model ran and produced
 nothing usable, which counts against it. A **transport** failure means the
 call never reached a working model, which makes the run incomplete and needs

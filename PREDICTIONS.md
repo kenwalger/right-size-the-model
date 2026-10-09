@@ -74,19 +74,19 @@ apart afterwards.
 
 ## Setup, recorded at the start
 
-| Field                                   | Value                                   |
-|-----------------------------------------|-----------------------------------------|
-| Pi model                                | 4                                       |
-| RAM                                     | 4 GB                                    |
-| Storage                                 | 32 GB                                   |
-| Cooling                                 | Heat Sink + fan                         |
-| OS and version                          | Debian GNU/Linux 13, 6.18.50+rpt-rpi-v8 |
-| Ollama version                          | 0.40.1                                  |
-| Models, exact tags and digests          | qwen2.5:1.5b, smollm2:360m              |
-| Python Version                          | 3.13.5                                  |
-| Quantisation, if not the Ollama default |                                         |
-| Total hardware cost                     | $169.99 USD                             |
-| Date run                                |                                         |
+| Field                                   | Value                                                |
+|-----------------------------------------|------------------------------------------------------|
+| Pi model                                | 4                                                    |
+| RAM                                     | 4 GB                                                 |
+| Storage                                 | 32 GB                                                |
+| Cooling                                 | Heat Sink + fan                                      |
+| OS and version                          | Debian GNU/Linux 13, 6.18.50+rpt-rpi-v8              |
+| Ollama version                          | 0.40.1                                               |
+| Models, exact tags and digests          | qwen2.5:1.5b 65ec06548149, smollm2:360m 297281b699fc |
+| Python Version                          | 3.13.5                                               |
+| Quantisation, if not the Ollama default |                                                      |
+| Total hardware cost                     | $169.99 USD                                          |
+| Date run                                |                                                      |
 
 ---
 

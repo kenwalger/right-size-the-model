@@ -108,6 +108,34 @@ secondary. A system that invents a plausible answer with no evidence is worse
 than one that fails loudly, because it is indistinguishable from one that
 worked.
 
+## What the run measures besides correctness
+
+Ollama reports execution metrics with every reply, and the runner records
+them per call. They cost nothing: same request, same wall clock, fields that
+were already in the response.
+
+| Field | What it is |
+| --- | --- |
+| `tps` | tokens per second of generation |
+| `prompt_tokens` | how much the model had to read |
+| `gen_tokens` | how much it produced |
+| `first_token_ms` | model load plus prompt processing, the wait before output starts |
+| `done_reason` | how generation ended; `length` means it hit the cap |
+
+`tps` is the one to watch. Wall-clock latency cannot tell a slow machine
+from a long answer, so a throttling CPU and a verbose reply look identical
+in it. Tokens per second separates them, and the scorer compares the first
+third of a run to the last third and says so when the machine slowed down.
+
+`first_token_ms` is not time-to-first-token in the streaming sense. This
+harness uses `stream: false`, so there is no first-token event to observe.
+It is named for what it measures: how long the caller waits before the model
+begins producing.
+
+`prompt_tokens` answers the context question. Grounded QA sends the whole
+corpus with every question, so this is where you see what that costs and how
+much headroom is left against the model's context window.
+
 ## Two kinds of failure
 
 Not every error is the same thing, and conflating them would misreport a

@@ -10,10 +10,11 @@ Run one workflow against one model and write raw results.
 Talks to Ollama on http://localhost:11434 by default. Override with
 OLLAMA_HOST. Standard library only, so it runs on the Pi as-is.
 
-Writes results/<workflow>__<model>.json with one record per fixture:
-the input, the raw reply, the parsed answer, and the latency. A call that
-fails records the error and the run continues, because a partial run with
-known holes is worth more than a traceback at fixture 7 of 30.
+Writes results/<workflow>__<model>.json with one record per fixture: the
+input, the raw reply, the parsed answer, the wall-clock latency, and the
+execution metrics Ollama reports. A call that fails records the error and
+the run continues, because a partial run with known holes is worth more
+than a traceback at fixture 7 of 30.
 
 Scoring happens in score.py. This script does not judge anything.
 """
@@ -86,8 +87,80 @@ class OllamaError(RuntimeError):
         self.kind = kind
 
 
+def metrics_from(payload):
+    """Pull Ollama's execution metrics out of a generate response.
+
+    Ollama reports durations in nanoseconds. Every field is optional here,
+    because a different Ollama version may not send all of them and a missing
+    number should produce a null rather than a crash mid-run.
+
+    The fields, and what they separate:
+
+      prompt_tokens / prompt_ms   reading the prompt, before any output
+      gen_tokens / gen_ms         producing the answer
+      load_ms                     loading the model, large on the first call
+                                  of a run and near zero afterwards
+      tps                         gen_tokens per second of generation
+
+    `first_token_ms` is load + prompt, which is how long the caller waits
+    before the model starts producing. It is NOT time-to-first-token in the
+    streaming sense: this harness uses stream=false, so there is no
+    first-token event to observe. Named for what it actually measures.
+
+    tps is the number to watch across a run. Wall-clock latency conflates a
+    slow machine with a long answer; tps does not, so a CPU being clocked
+    down shows up here as decay and nowhere else.
+    """
+
+    def ns_to_ms(key):
+        v = payload.get(key)
+        return round(v / 1e6, 1) if isinstance(v, (int, float)) else None
+
+    prompt_ms = ns_to_ms("prompt_eval_duration")
+    gen_ms = ns_to_ms("eval_duration")
+    load_ms = ns_to_ms("load_duration")
+    gen_tokens = payload.get("eval_count")
+    prompt_tokens = payload.get("prompt_eval_count")
+
+    tps = None
+    if isinstance(gen_tokens, int) and isinstance(gen_ms, float) and gen_ms > 0:
+        tps = round(gen_tokens / (gen_ms / 1000.0), 2)
+
+    first_token_ms = None
+    if prompt_ms is not None:
+        first_token_ms = round(prompt_ms + (load_ms or 0.0), 1)
+
+    return {
+        "prompt_tokens": prompt_tokens,
+        "gen_tokens": gen_tokens,
+        "prompt_ms": prompt_ms,
+        "gen_ms": gen_ms,
+        "load_ms": load_ms,
+        "total_ms": ns_to_ms("total_duration"),
+        "tps": tps,
+        "first_token_ms": first_token_ms,
+        "done_reason": payload.get("done_reason"),
+    }
+
+
+EMPTY_METRICS = {
+    k: None
+    for k in (
+        "prompt_tokens",
+        "gen_tokens",
+        "prompt_ms",
+        "gen_ms",
+        "load_ms",
+        "total_ms",
+        "tps",
+        "first_token_ms",
+        "done_reason",
+    )
+}
+
+
 def ollama(model, prompt):
-    """Call Ollama and return the reply text, or raise OllamaError with detail.
+    """Call Ollama. Return (reply_text, metrics), or raise OllamaError.
 
     urllib raises HTTPError and discards the response body by default, which
     is exactly where Ollama puts its reason. Read it before giving up.
@@ -105,7 +178,8 @@ def ollama(model, prompt):
     )
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-            return json.loads(r.read())["response"].strip()
+            payload = json.loads(r.read())
+            return payload["response"].strip(), metrics_from(payload)
     except urllib.error.HTTPError as e:
         try:
             detail = e.read().decode("utf-8", "replace").strip()
@@ -164,6 +238,18 @@ def progress(i, total, fixture_id, note=""):
     print(f"  [{i}/{total}] {fixture_id} {note}", file=sys.stderr, flush=True)
 
 
+def tail(rec):
+    """Print the per-call speed so a slowing machine is visible as it runs."""
+    tps = rec.get("tps")
+    if tps is not None:
+        print(f"      {tps:.1f} tok/s", file=sys.stderr, flush=True)
+
+
+def median(xs):
+    xs = sorted(x for x in xs if x is not None)
+    return xs[len(xs) // 2] if xs else None
+
+
 def main():
     if len(sys.argv) != 3:
         print(__doc__)
@@ -173,6 +259,10 @@ def main():
     records = []
     errors = {"transport": 0, "model": 0}
 
+    if workflow not in ("extraction", "classification", "qa"):
+        print(f"Unknown workflow: {workflow}")
+        sys.exit(1)
+
     if workflow == "extraction":
         rows = load("extraction.jsonl")
         for i, r in enumerate(rows, 1):
@@ -180,17 +270,29 @@ def main():
             t0 = time.perf_counter()
             if model == "regex":
                 m = ORDER_RE.search(r["input"])
-                rec = {**r, "raw": "", "answer": (m.group(0).upper() if m else None)}
+                rec = {
+                    **r,
+                    "raw": "",
+                    "answer": (m.group(0).upper() if m else None),
+                    **EMPTY_METRICS,
+                }
             else:
                 try:
-                    reply = ollama(model, PROMPTS["extraction"].format(input=r["input"]))
-                    rec = {**r, "raw": reply, "answer": parse_extraction(reply)}
+                    reply, met = ollama(model, PROMPTS["extraction"].format(input=r["input"]))
+                    rec = {**r, "raw": reply, "answer": parse_extraction(reply), **met}
                 except OllamaError as e:
                     errors[e.kind] += 1
                     print(f"      FAILED ({e.kind}): {e}", file=sys.stderr, flush=True)
-                    rec = {**r, "raw": "", "answer": None,
-                           "error": str(e), "error_kind": e.kind}
+                    rec = {
+                        **r,
+                        "raw": "",
+                        "answer": None,
+                        "error": str(e),
+                        "error_kind": e.kind,
+                        **EMPTY_METRICS,
+                    }
             rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            tail(rec)
             records.append(rec)
 
     elif workflow == "classification":
@@ -202,14 +304,21 @@ def main():
             progress(i, len(rows), r["id"])
             t0 = time.perf_counter()
             try:
-                reply = ollama(model, PROMPTS["classification"].format(input=r["input"]))
-                rec = {**r, "raw": reply, "answer": parse_label(reply)}
+                reply, met = ollama(model, PROMPTS["classification"].format(input=r["input"]))
+                rec = {**r, "raw": reply, "answer": parse_label(reply), **met}
             except OllamaError as e:
                 errors[e.kind] += 1
                 print(f"      FAILED ({e.kind}): {e}", file=sys.stderr, flush=True)
-                rec = {**r, "raw": "", "answer": "ERROR",
-                       "error": str(e), "error_kind": e.kind}
+                rec = {
+                    **r,
+                    "raw": "",
+                    "answer": "ERROR",
+                    "error": str(e),
+                    "error_kind": e.kind,
+                    **EMPTY_METRICS,
+                }
             rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            tail(rec)
             records.append(rec)
 
     elif workflow == "qa":
@@ -222,21 +331,24 @@ def main():
             progress(i, len(rows), r["id"], f"({r['kind']})")
             t0 = time.perf_counter()
             try:
-                reply = ollama(
+                reply, met = ollama(
                     model, PROMPTS["qa"].format(corpus=corpus, question=r["question"])
                 )
-                rec = {**r, "raw": reply, "answer": reply}
+                rec = {**r, "raw": reply, "answer": reply, **met}
             except OllamaError as e:
                 errors[e.kind] += 1
                 print(f"      FAILED ({e.kind}): {e}", file=sys.stderr, flush=True)
-                rec = {**r, "raw": "", "answer": "",
-                       "error": str(e), "error_kind": e.kind}
+                rec = {
+                    **r,
+                    "raw": "",
+                    "answer": "",
+                    "error": str(e),
+                    "error_kind": e.kind,
+                    **EMPTY_METRICS,
+                }
             rec["ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            tail(rec)
             records.append(rec)
-
-    else:
-        print(f"Unknown workflow: {workflow}")
-        sys.exit(1)
 
     safe = model.replace(":", "-").replace("/", "-")
     path = OUT / f"{workflow}__{safe}.json"
@@ -259,6 +371,16 @@ def main():
     print(f"\n{len(records)} records -> {path.name}")
     if lat:
         print(f"latency ms: median {lat[len(lat) // 2]:.0f}, max {lat[-1]:.0f}")
+
+    med_tps = median([r.get("tps") for r in records])
+    if med_tps is not None:
+        med_prompt = median([r.get("prompt_tokens") for r in records])
+        max_prompt = max(
+            (r.get("prompt_tokens") or 0 for r in records), default=0
+        )
+        print(f"generation: median {med_tps:.1f} tok/s")
+        print(f"prompt    : median {med_prompt} tokens, max {max_prompt}")
+
     if errors["model"]:
         print(
             f"{errors['model']} of {len(records)} calls produced NO USABLE ANSWER. "

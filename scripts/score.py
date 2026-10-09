@@ -18,6 +18,11 @@ Two kinds of failure are handled differently, and the distinction matters:
              prediction Ollama aborted for repetition. Counted against the
              model on a line of its own. Dropping these would quietly
              discard the cases a model cannot handle.
+
+Each run also gets a compute section: generation speed, prompt size, and a
+check for whether speed decayed across the run. That last one is a
+throttling detector. Wall-clock latency cannot separate a slow machine from
+a long answer; tokens per second can.
 """
 
 import json
@@ -40,9 +45,19 @@ ABSTAIN_MARKERS = [
     "unable to find",
 ]
 
+# How much slower the end of a run may be than the start before it is
+# called out. Thermal throttling on a small board shows up as a steady
+# decline well beyond this.
+DECAY_FLAG = 0.90
+
 
 def pct(n, d):
     return f"{100.0 * n / d:.0f}%" if d else "n/a"
+
+
+def median(xs):
+    xs = sorted(x for x in xs if x is not None)
+    return xs[len(xs) // 2] if xs else None
 
 
 def split(recs):
@@ -71,6 +86,57 @@ def report_failures(no_answer, unreachable, total):
         for msg, n in Counter(r["error"][:80] for r in unreachable).most_common(3):
             print(f"     {n}x {msg}")
         print("     These are excluded. The run is incomplete.")
+
+
+def report_compute(recs):
+    """Generation speed, prompt size, and whether the machine slowed down.
+
+    Printed for every run that carries metrics. Result files written before
+    metrics capture was added have none, and are skipped silently.
+    """
+    timed = [r for r in recs if r.get("tps") is not None]
+    if not timed:
+        return None
+
+    med_tps = median([r["tps"] for r in timed])
+    med_prompt = median([r.get("prompt_tokens") for r in recs])
+    max_prompt = max((r.get("prompt_tokens") or 0 for r in recs), default=0)
+    med_gen = median([r.get("gen_tokens") for r in recs])
+    med_first = median([r.get("first_token_ms") for r in recs])
+
+    print("  compute:")
+    print(f"    generation     {med_tps:.1f} tok/s median")
+    print(f"    prompt size    {med_prompt} tokens median, {max_prompt} max")
+    print(f"    answer length  {med_gen} tokens median")
+    if med_first is not None:
+        print(f"    wait to start  {med_first:.0f} ms median (model load + prompt)")
+
+    # Throttle detector. Compare the first third of the run to the last.
+    decay = None
+    if len(timed) >= 6:
+        third = max(1, len(timed) // 3)
+        early = median([r["tps"] for r in timed[:third]])
+        late = median([r["tps"] for r in timed[-third:]])
+        if early and late:
+            decay = late / early
+            verdict = "steady" if decay >= DECAY_FLAG else "SLOWED DOWN"
+            print(
+                f"    across the run {early:.1f} -> {late:.1f} tok/s "
+                f"({decay * 100:.0f}% of starting speed, {verdict})"
+            )
+            if decay < DECAY_FLAG:
+                print("      Check vcgencmd get_throttled. A run that slows like this")
+                print("      was measured on a CPU being clocked down, and the latency")
+                print("      numbers above describe the throttling, not the model.")
+
+    # Anything Ollama stopped early rather than finishing.
+    cut = Counter(
+        r.get("done_reason") for r in recs if r.get("done_reason") not in (None, "stop")
+    )
+    for reason, n in cut.most_common():
+        print(f"    {n} answers ended on '{reason}' rather than finishing")
+
+    return med_tps
 
 
 def score_extraction(data):
@@ -211,24 +277,37 @@ def main():
             n, d = score_classification(data)
         else:
             n, d = score_qa(data)
+        tps = report_compute(data["records"])
         _, no_answer, unreachable = split(data["records"])
-        rows.append((data["workflow"], data["model"], n, d, med, len(no_answer), len(unreachable)))
+        rows.append(
+            (
+                data["workflow"],
+                data["model"],
+                n,
+                d,
+                med,
+                tps,
+                len(no_answer),
+                len(unreachable),
+            )
+        )
 
     print("\n=== summary")
     print(
         f"{'workflow':<16}{'model':<22}{'score':<10}{'median ms':>10}"
-        f"{'no answer':>11}{'unreached':>11}"
+        f"{'tok/s':>8}{'no answer':>11}{'unreached':>11}"
     )
-    for w, m, n, d, med, na, un in rows:
-        print(f"{w:<16}{m:<22}{f'{n}/{d}':<10}{med:>10.0f}{na:>11}{un:>11}")
-    if any(r[6] for r in rows):
+    for w, m, n, d, med, tps, na, un in rows:
+        speed = f"{tps:.1f}" if tps is not None else "-"
+        print(f"{w:<16}{m:<22}{f'{n}/{d}':<10}{med:>10.0f}{speed:>8}{na:>11}{un:>11}")
+    if any(r[7] for r in rows):
         print("\nSome calls never reached a working model. Those runs are incomplete")
         print("and their scores are computed over the calls that ran.")
 
     if "--csv" in sys.argv:
-        print("\nworkflow,model,score,total,median_ms,no_answer,unreached")
-        for w, m, n, d, med, na, un in rows:
-            print(f"{w},{m},{n},{d},{med:.0f},{na},{un}")
+        print("\nworkflow,model,score,total,median_ms,median_tps,no_answer,unreached")
+        for w, m, n, d, med, tps, na, un in rows:
+            print(f"{w},{m},{n},{d},{med:.0f},{tps if tps is not None else ''},{na},{un}")
 
 
 if __name__ == "__main__":
