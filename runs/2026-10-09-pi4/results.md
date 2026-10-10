@@ -8,18 +8,18 @@ before citing any of this.
 
 ## Setup
 
-| Field | Value |
-| --- | --- |
-| Device | Raspberry Pi 4, 4 GB RAM |
-| Storage | 32 GB SD card |
-| Cooling | Heat sinks and fan |
-| OS and version | TODO |
-| Runtime | Ollama, version TODO |
-| Models | smollm2:360m, qwen2.5:1.5b (digests TODO) |
-| Quantisation | Ollama default for each tag |
-| Total hardware cost | $169.99 USD |
-| Date | 2026-10-09 |
-| Throttled | `0x0` before and after every run |
+| Field               | Value                                     |
+|---------------------|-------------------------------------------|
+| Device              | Raspberry Pi 4, 4 GB RAM                  |
+| Storage             | 32 GB SD card                             |
+| Cooling             | Heat sinks and fan                        |
+| OS and version                          | Debian GNU/Linux 13, 6.18.50+rpt-rpi-v8              |
+| Runtime             | Ollama, version 0.40.1                       |
+| Models, exact tags and digests          | qwen2.5:1.5b 65ec06548149, smollm2:360m 297281b699fc |
+| Quantisation        | Ollama default for each tag               |
+| Total hardware cost | $169.99 USD                               |
+| Date                | 2026-10-09                                |
+| Throttled           | `0x0` before and after every run          |
 
 ## Summary
 
