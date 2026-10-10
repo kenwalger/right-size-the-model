@@ -1,0 +1,157 @@
+
+=== classification / qwen2.5:1.5b (median 2885 ms, max 10708 ms)
+  overall          23/50  46%
+  invalid output   0   (a reply that is not one of the six labels)
+  confident wrong  26   <- the number that matters
+  ambiguous cases  5/16
+  confusion (expected -> got):
+    appointment   appointment 4, availability 3, escalate 1, question 1
+    availability  question 3, availability 3
+    billing       complaint 5, billing 1, question 1
+    complaint     complaint 6
+    escalate      complaint 7, question 3, appointment 1, billing 1
+    question      question 9, complaint 1
+    WRONG  cl03  exp appointment  got availability 'Do you have anything open this weekend for six o'
+    WRONG  cl05  exp appointment  got availability 'Is the barrel room tour bookable in advance?'
+    WRONG  cl08  exp billing      got complaint    'I was charged twice for the November club shipme'
+    WRONG  cl09  exp billing      got complaint    'My card on file expired, how do I update it?'
+    WRONG  cl11  exp billing      got complaint    "The discount didn't apply to my order."
+    WRONG  cl12  exp billing      got complaint    "Refund still hasn't shown up after two weeks."
+    WRONG  cl13  exp billing      got question     'What does the club cost per quarter?'
+    WRONG  cl14  exp availability got question     'Do you still have the 2022 Pinot Gris?'
+    WRONG  cl16  exp availability got question     'How many bottles of the reserve are left?'
+    WRONG  cl19  exp availability got question     'Do you carry anything non-alcoholic for a design'
+    WRONG  cl27  exp question     got complaint    'Where exactly are you? Maps sent me to a field.'
+    WRONG  cl32  exp escalate     got complaint    'Someone slipped on the steps by the barrel room '
+    WRONG  cl33  exp escalate     got question     "I'm a reporter working on a piece about the 2024"
+    WRONG  cl34  exp escalate     got complaint    'This is a formal notice regarding the trademark '
+    WRONG  cl35  exp escalate     got question     "We'd like to carry your wine in 40 stores. Who h"
+    WRONG  cl36  exp escalate     got complaint    'My order never came and my bank is reversing the'
+    WRONG  cl37  exp escalate     got complaint    'I have a severe sulfite allergy, what is actuall'
+    WRONG  cl39  exp escalate     got appointment  'Following up on my last email.'
+    WRONG  cl40  exp appointment  got availability 'Is Saturday still on?'
+    WRONG  cl41  exp escalate     got complaint    "That didn't work."
+    WRONG  cl43  exp escalate     got question     'Can you call me?'
+    WRONG  cl44  exp escalate     got complaint    'We had an issue with the shipment and also want '
+    WRONG  cl45  exp escalate     got billing      'Still nothing.'
+    WRONG  cl46  exp billing      got complaint    'The price seems wrong on the website.'
+    WRONG  cl47  exp appointment  got question     'Do you have the 2021 left, and can we come try i'
+    WRONG  cl48  exp escalate     got complaint    'I was told someone would get back to me about a '
+  compute:
+    generation     7.5 tok/s median
+    prompt size    104 tokens median, 113 max
+    answer length  2 tokens median
+    wait to start  2369 ms median (model load + prompt)
+    across the run 7.6 -> 7.6 tok/s (100% of starting speed, steady)
+
+=== classification / smollm2:360m (median 1881 ms, max 5886 ms)
+  overall          15/50  30%
+  invalid output   1   (a reply that is not one of the six labels)
+  confident wrong  3   <- the number that matters
+  ambiguous cases  10/16
+  confusion (expected -> got):
+    appointment   escalate 8, question 1
+    availability  escalate 3, appointment 1, INVALID:Category: 1, question 1
+    billing       escalate 7
+    complaint     escalate 6
+    escalate      escalate 12
+    question      escalate 7, question 3
+    WRONG  cl14  exp availability got appointment  'Do you still have the 2022 Pinot Gris?'
+    WRONG  cl17  exp availability got question     'Are you open on Thanksgiving?'
+    WRONG  cl40  exp appointment  got question     'Is Saturday still on?'
+  compute:
+    generation     6.2 tok/s median
+    prompt size    113 tokens median, 122 max
+    answer length  6 tokens median
+    wait to start  939 ms median (model load + prompt)
+    across the run 6.2 -> 6.2 tok/s (100% of starting speed, steady)
+
+=== extraction / qwen2.5:1.5b (median 4972 ms, max 39883 ms)
+  overall      28/30  93%
+  present      20/22
+  absent       8/8 declined correctly  (invented 0, no usable answer 0)
+  decoys       3/3
+  compute:
+    generation     4.3 tok/s median
+    prompt size    92 tokens median, 106 max
+    answer length  9 tokens median
+    wait to start  2940 ms median (model load + prompt)
+    across the run 4.3 -> 7.6 tok/s (176% of starting speed, steady)
+
+=== extraction / regex (median 0 ms, max 0 ms)
+  overall      30/30  100%
+  present      22/22
+  absent       8/8 declined correctly  (invented 0, no usable answer 0)
+  decoys       3/3
+
+=== extraction / smollm2:360m (median 2556 ms, max 21056 ms)
+  no usable answer  1/30   <- counts against the model
+    ex27  {"error":"prediction aborted, token repeat limit reached"}
+  overall      8/30  27%
+  present      8/22
+  absent       0/8 declined correctly  (invented 7, no usable answer 1)
+  decoys       0/3
+    INVENTED  ex23: '1234567890'  <- absent
+    INVENTED  ex24: '1234567890'  <- absent
+    INVENTED  ex25: 'ORD-1000'  <- absent
+    INVENTED  ex26: '123456789'  <- absent
+    INVENTED  ex28: 'MEM-443322'  <- decoy: wrong prefix
+    INVENTED  ex29: '1Z999AA10123456784'  <- decoy: tracking number
+    INVENTED  ex30: '503-555-0142'  <- decoy: phone number
+  compute:
+    generation     5.9 tok/s median
+    prompt size    102 tokens median, 116 max
+    answer length  7 tokens median
+    wait to start  1143 ms median (model load + prompt)
+    across the run 5.9 -> 5.7 tok/s (97% of starting speed, steady)
+
+=== qa / qwen2.5:1.5b (median 3577 ms, max 21921 ms)
+  abstained correctly  4/4   <- the number that matters
+  fabricated           0/4
+  over-abstained       9/11
+  keyword present      1/11  (indicative only, read them)
+  compute:
+    generation     4.7 tok/s median
+    prompt size    97 tokens median, 112 max
+    answer length  5 tokens median
+    wait to start  2471 ms median (model load + prompt)
+    across the run 4.8 -> 4.6 tok/s (97% of starting speed, steady)
+
+=== qa / smollm2:360m (median 4646 ms, max 21197 ms)
+  abstained correctly  0/4   <- the number that matters
+  fabricated           4/4
+  over-abstained       1/11
+  keyword present      1/11  (indicative only, read them)
+    FABRICATED  qa12: What is the alcohol percentage of the 2024 estate Pinot Noir?
+                The alcohol percentage of the 2024 estate Pinot Noir is 12.5%.
+    FABRICATED  qa13: Who is the winemaker?
+                The winemaker is the person responsible for selecting, preparing, and blending grapes to create wine.
+    FABRICATED  qa14: How much does the Cellar tier cost per quarter?
+                The Cellar tier costs $10 per quarter.
+    FABRICATED  qa15: What yeast strain was used on the 2024 Pinot Gris?
+                The yeast strain used on the 2024 Pinot Gris was Saccharomyces cerevisiae, commonly known as white wine yeast.
+  compute:
+    generation     5.4 tok/s median
+    prompt size    110 tokens median, 125 max
+    answer length  20 tokens median
+    wait to start  924 ms median (model load + prompt)
+    across the run 5.6 -> 5.3 tok/s (96% of starting speed, steady)
+
+=== summary
+workflow        model                 score      median ms   tok/s  no answer  unreached
+classification  qwen2.5:1.5b          23/50           2885     7.5          0          0
+classification  smollm2:360m          15/50           1881     6.2          0          0
+extraction      qwen2.5:1.5b          28/30           4972     4.3          0          0
+extraction      regex                 30/30              0       -          0          0
+extraction      smollm2:360m          8/30            2556     5.9          1          0
+qa              qwen2.5:1.5b          4/4             3577     4.7          0          0
+qa              smollm2:360m          0/4             4646     5.4          0          0
+
+workflow,model,score,total,median_ms,median_tps,no_answer,unreached
+classification,qwen2.5:1.5b,23,50,2885,7.54,0,0
+classification,smollm2:360m,15,50,1881,6.18,0,0
+extraction,qwen2.5:1.5b,28,30,4972,4.29,0,0
+extraction,regex,30,30,0,,0,0
+extraction,smollm2:360m,8,30,2556,5.91,1,0
+qa,qwen2.5:1.5b,4,4,3577,4.73,0,0
+qa,smollm2:360m,0,4,4646,5.36,0,0

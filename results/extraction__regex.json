@@ -1,0 +1,278 @@
+{
+  "workflow": "extraction",
+  "model": "regex",
+  "host": "http://localhost:11434",
+  "when": "2026-10-08T18:09:27",
+  "records": [
+    {
+      "id": "ex01",
+      "input": "Hi, I never got a shipping notice for ORD-448120. Can you check?",
+      "expected": "ORD-448120",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-448120",
+      "ms": 0.0
+    },
+    {
+      "id": "ex02",
+      "input": "Order ORD-901233 arrived with one bottle broken.",
+      "expected": "ORD-901233",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-901233",
+      "ms": 0.0
+    },
+    {
+      "id": "ex03",
+      "input": "Can you cancel ORD-220047? I ordered twice by mistake.",
+      "expected": "ORD-220047",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-220047",
+      "ms": 0.0
+    },
+    {
+      "id": "ex04",
+      "input": "ord-556120 was supposed to arrive Tuesday.",
+      "expected": "ORD-556120",
+      "note": "present lowercase",
+      "raw": "",
+      "answer": "ORD-556120",
+      "ms": 0.0
+    },
+    {
+      "id": "ex05",
+      "input": "Reference: ORD-100045. Please add a gift note.",
+      "expected": "ORD-100045",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-100045",
+      "ms": 0.0
+    },
+    {
+      "id": "ex06",
+      "input": "I think the number is ORD-778899 but I'm reading off a phone screen.",
+      "expected": "ORD-778899",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-778899",
+      "ms": 0.0
+    },
+    {
+      "id": "ex07",
+      "input": "ORD-333121 and nothing since.",
+      "expected": "ORD-333121",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-333121",
+      "ms": 0.0
+    },
+    {
+      "id": "ex08",
+      "input": "Hello! Following up on ORD-654321 from last month.",
+      "expected": "ORD-654321",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-654321",
+      "ms": 0.0
+    },
+    {
+      "id": "ex09",
+      "input": "My wife placed ORD-010101, I'm just the one asking.",
+      "expected": "ORD-010101",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-010101",
+      "ms": 0.0
+    },
+    {
+      "id": "ex10",
+      "input": "ORD-999000: wrong address, please hold.",
+      "expected": "ORD-999000",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-999000",
+      "ms": 0.0
+    },
+    {
+      "id": "ex11",
+      "input": "Attached is the invoice for ORD-121212.",
+      "expected": "ORD-121212",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-121212",
+      "ms": 0.0
+    },
+    {
+      "id": "ex12",
+      "input": "Can I add a case to ORD-456789 if it hasn't shipped?",
+      "expected": "ORD-456789",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-456789",
+      "ms": 0.0
+    },
+    {
+      "id": "ex13",
+      "input": "ORD-808080 shows delivered but nothing is here.",
+      "expected": "ORD-808080",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-808080",
+      "ms": 0.0
+    },
+    {
+      "id": "ex14",
+      "input": "Order number ORD-246813, name is Harper.",
+      "expected": "ORD-246813",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-246813",
+      "ms": 0.0
+    },
+    {
+      "id": "ex15",
+      "input": "Re: ORD-135791 - still waiting",
+      "expected": "ORD-135791",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-135791",
+      "ms": 0.0
+    },
+    {
+      "id": "ex16",
+      "input": "Sorry, resending. ORD-192837.",
+      "expected": "ORD-192837",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-192837",
+      "ms": 0.0
+    },
+    {
+      "id": "ex17",
+      "input": "The club shipment ORD-564738 had the wrong vintage.",
+      "expected": "ORD-564738",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-564738",
+      "ms": 0.0
+    },
+    {
+      "id": "ex18",
+      "input": "ORD-111222 please refund",
+      "expected": "ORD-111222",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-111222",
+      "ms": 0.0
+    },
+    {
+      "id": "ex19",
+      "input": "I have two open: ORD-343434 and another I cannot find.",
+      "expected": "ORD-343434",
+      "note": "present, two implied",
+      "raw": "",
+      "answer": "ORD-343434",
+      "ms": 0.0
+    },
+    {
+      "id": "ex20",
+      "input": "Good morning. ORD-717171 needs to go to a different state.",
+      "expected": "ORD-717171",
+      "note": "present",
+      "raw": "",
+      "answer": "ORD-717171",
+      "ms": 0.0
+    },
+    {
+      "id": "ex21",
+      "input": "   ORD-282828   ",
+      "expected": "ORD-282828",
+      "note": "present, whitespace",
+      "raw": "",
+      "answer": "ORD-282828",
+      "ms": 0.0
+    },
+    {
+      "id": "ex22",
+      "input": "ord-595959 (lowercase, sorry)",
+      "expected": "ORD-595959",
+      "note": "present lowercase",
+      "raw": "",
+      "answer": "ORD-595959",
+      "ms": 0.0
+    },
+    {
+      "id": "ex23",
+      "input": "Do you ship to Idaho?",
+      "expected": null,
+      "note": "absent",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex24",
+      "input": "What time does the tasting room close on Sundays?",
+      "expected": null,
+      "note": "absent",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex25",
+      "input": "I would like to join the wine club. What are the tiers?",
+      "expected": null,
+      "note": "absent",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex26",
+      "input": "Can I bring a dog to the patio?",
+      "expected": null,
+      "note": "absent",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex27",
+      "input": "Thanks for a lovely afternoon yesterday.",
+      "expected": null,
+      "note": "absent",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex28",
+      "input": "My membership number is MEM-443322, does that help?",
+      "expected": null,
+      "note": "decoy: wrong prefix",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex29",
+      "input": "Tracking says 1Z999AA10123456784, is that your number or UPS's?",
+      "expected": null,
+      "note": "decoy: tracking number",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    },
+    {
+      "id": "ex30",
+      "input": "Call me at 503-555-0142 about the shipment.",
+      "expected": null,
+      "note": "decoy: phone number",
+      "raw": "",
+      "answer": null,
+      "ms": 0.0
+    }
+  ]
+}
