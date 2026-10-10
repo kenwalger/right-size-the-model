@@ -30,6 +30,9 @@ import pathlib
 import sys
 from collections import Counter, defaultdict
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from run import LABELS  # noqa: E402
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
 ABSTAIN_MARKERS = [
@@ -45,10 +48,17 @@ ABSTAIN_MARKERS = [
     "unable to find",
 ]
 
-# How much slower the end of a run may be than the start before it is
-# called out. Thermal throttling on a small board shows up as a steady
-# decline well beyond this.
+# How far the end of a run may drift from its start before it is called
+# out, in either direction. Thermal throttling shows up as a decline well
+# past the lower bound. A rise past the upper bound is not good news: it
+# means the per-call speed is not measuring what it looks like, usually
+# because the generations are too short to time reliably.
 DECAY_FLAG = 0.90
+SPEEDUP_FLAG = 1.10
+
+# Below this many generated tokens, a per-call tokens-per-second figure is
+# dominated by start-up and rounding rather than by throughput.
+SHORT_GENERATION = 10
 
 
 def pct(n, d):
@@ -119,7 +129,12 @@ def report_compute(recs):
         late = median([r["tps"] for r in timed[-third:]])
         if early and late:
             decay = late / early
-            verdict = "steady" if decay >= DECAY_FLAG else "SLOWED DOWN"
+            if decay < DECAY_FLAG:
+                verdict = "SLOWED DOWN"
+            elif decay > SPEEDUP_FLAG:
+                verdict = "SPED UP, which is suspicious"
+            else:
+                verdict = "steady"
             print(
                 f"    across the run {early:.1f} -> {late:.1f} tok/s "
                 f"({decay * 100:.0f}% of starting speed, {verdict})"
@@ -128,6 +143,17 @@ def report_compute(recs):
                 print("      Check vcgencmd get_throttled. A run that slows like this")
                 print("      was measured on a CPU being clocked down, and the latency")
                 print("      numbers above describe the throttling, not the model.")
+            elif decay > SPEEDUP_FLAG:
+                print("      Hardware does not get faster partway through a run. Either")
+                print("      something else was competing for the CPU at the start, or")
+                print("      the generations are too short to time (see below).")
+
+    if med_gen is not None and med_gen < SHORT_GENERATION:
+        print(
+            f"    NOTE: answers median {med_gen} tokens. Below {SHORT_GENERATION},"
+            " tok/s is noisy"
+        )
+        print("      per call and the across-the-run comparison is weak evidence.")
 
     # Anything Ollama stopped early rather than finishing.
     cut = Counter(
@@ -190,9 +216,34 @@ def score_classification(data):
     ]
     ambiguous = [r for r in scored if r["note"].startswith(("ambiguous", "borderline"))]
     amb_right = sum(1 for r in answered if r in ambiguous and r["answer"] == r["expected"])
+    # Is the model actually distinguishing, or stuck on one label?
+    #
+    # This check exists because the first real run produced a model that
+    # answered "escalate" to 43 of 50 messages. Confident wrong excludes
+    # escalations on purpose, since a model that escalates when unsure is
+    # usable. A model that escalates ALWAYS therefore scores near zero on
+    # the metric meant to reward caution, and beats a better model six
+    # times over while being useless. The safe-failure exemption has to be
+    # paired with evidence that the model is making distinctions at all,
+    # or it certifies a stuck needle.
+    used = Counter(
+        r["answer"] for r in answered if not str(r["answer"]).startswith("INVALID")
+    )
+    top_label, top_n = used.most_common(1)[0] if used else (None, 0)
+    collapsed = bool(answered) and top_n > len(answered) / 2
+
     print(f"  overall          {right}/{len(scored)}  {pct(right, len(scored))}")
     print(f"  invalid output   {len(invalid)}   (a reply that is not one of the six labels)")
-    print(f"  confident wrong  {len(confident_wrong)}   <- the number that matters")
+    print(
+        f"  labels used      {len(used)} of {len(LABELS)}; "
+        f"most common '{top_label}' {top_n} times ({pct(top_n, len(answered))})"
+    )
+    if collapsed:
+        print(f"  !! COLLAPSED onto '{top_label}'. It is not classifying, it is answering.")
+        print("     The two numbers below are not meaningful for this model:")
+        print(f"     confident wrong is low because '{top_label}' is excluded or correct,")
+        print("     and the ambiguous score rides on the same answer being right by luck.")
+    print(f"  confident wrong  {len(confident_wrong)}" + ("" if collapsed else "   <- the number that matters"))
     print(f"  ambiguous cases  {amb_right}/{len(ambiguous)}")
     conf = defaultdict(Counter)
     for r in scored:

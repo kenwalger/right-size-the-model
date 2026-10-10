@@ -269,3 +269,8 @@ cython_debug/
 
 commit-message.txt
 content/
+
+
+# Offline test transcripts. The run you keep gets copied into runs/
+# on purpose; the rest are scratch.
+offline-test-*.log

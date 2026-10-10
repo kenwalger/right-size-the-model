@@ -130,6 +130,11 @@ It runs three calls rather than ninety-five, because the question is whether
 inference needs the network, not how well the models score. Nothing it does
 touches `results/`.
 
+Everything is written to `offline-test-<timestamp>.log` as well as the
+terminal, and the script ignores SIGHUP so it finishes even if the session
+drops. Copy the log into your `runs/` directory: it is the only evidence the
+test produces.
+
 ## Hosted reference
 
 Optional, and first on the cut list. If you want it, point the runner at an

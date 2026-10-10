@@ -18,6 +18,13 @@
 # Loopback is untouched, which is the point: Ollama listens on localhost,
 # so if inference needs the network the calls will fail for a real reason
 # rather than because the server became unreachable.
+#
+# Everything is written to a log file as well as the terminal, and the
+# script ignores SIGHUP so it finishes even if the session goes away. The
+# first run of this lost its entire output to a connection reset: the Pi
+# recovered exactly as designed and there was no record that it had,
+# which for a test whose only product is evidence is a complete failure.
+# Run it inside tmux as well if you want to watch it.
 
 set -uo pipefail
 
@@ -26,11 +33,20 @@ DEADMAN="${DEADMAN:-900}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(dirname "$HERE")"
 RUN_AS="${SUDO_USER:-$(id -un)}"
+LOG="${LOG:-$REPO/offline-test-$(date +%Y%m%d-%H%M%S).log}"
 
 if [[ $EUID -ne 0 ]]; then
   echo "Needs root to switch the radio. Run with sudo." >&2
   exit 1
 fi
+
+# Survive the session going away, and record everything. The HUP trap is
+# set before any child starts, so python inherits it too.
+trap "" HUP
+exec > >(tee -a "$LOG") 2>&1
+
+echo "logging to $LOG"
+echo
 
 radio_up()   { rfkill unblock wifi; }
 radio_down() { rfkill block wifi; }
@@ -103,4 +119,9 @@ else
   echo "RESULT: something failed offline. The output above says what."
 fi
 
+echo
+echo "full transcript: $LOG"
+
+# tee is a child of this shell; give it a moment to flush before exit.
+sleep 1
 exit $RESULT

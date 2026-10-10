@@ -86,7 +86,7 @@ apart afterwards.
 | Python Version                          | 3.13.5                                               |
 | Quantisation, if not the Ollama default |                                                      |
 | Total hardware cost                     | $169.99 USD                                          |
-| Date run                                |                                                      |
+| Date run                                | 9 October 2026                                       |
 
 ---
 

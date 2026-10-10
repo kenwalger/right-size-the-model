@@ -238,6 +238,10 @@ Unplug any ethernet cable first, or the Pi still has a route out and the
 result means nothing. The script checks for this and refuses rather than
 reporting a false pass.
 
+It writes everything to `offline-test-<timestamp>.log` as well as the
+terminal, and ignores SIGHUP, so a dropped session costs you nothing. Copy
+that log into your `runs/` directory when it finishes.
+
 Record what it prints. "Inference ran with no route to the internet" is a
 claim about this configuration on this afternoon, not a general claim about
 local models being private, and the write-up should say it that way.
