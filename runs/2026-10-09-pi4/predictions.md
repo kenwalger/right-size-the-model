@@ -6,6 +6,14 @@ edited. Only the Actual column was added afterwards.
 
 Fixture set: **v1**
 
+> **The grounded QA section was graded twice.** The first grading was
+> against an invalid run: `fixtures/corpus/` had never been committed, so
+> every question was asked against an empty reference block. Four rows in
+> that section were marked against behaviour that was an artifact of the
+> missing corpus. They are regraded here against the rerun, and the
+> original wrong gradings are noted inline, because a prediction sheet that
+> quietly corrects itself is worth nothing.
+
 ## How confident are you
 
 - **Confident**: I would be surprised to be wrong.
@@ -16,19 +24,19 @@ Fixture set: **v1**
 
 ## Setup, recorded at the start
 
-| Field                                   | Value                                                |
-|-----------------------------------------|------------------------------------------------------|
-| Pi model                                | 4                                                    |
-| RAM                                     | 4 GB                                                 |
-| Storage                                 | 32 GB                                                |
-| Cooling                                 | Heat Sink + fan                                      |
-| OS and version                          | Debian GNU/Linux 13, 6.18.50+rpt-rpi-v8              |
-| Ollama version                          | 0.40.1                                               |
-| Models, exact tags and digests          | qwen2.5:1.5b 65ec06548149, smollm2:360m 297281b699fc |
-| Python Version                          | 3.13.5                                               |
-| Quantisation, if not the Ollama default | default                                              |
-| Total hardware cost                     | $169.99 USD                                          |
-| Date run                                | 9 October 2026                                       |
+| Field | Value |
+|---|---|
+| Pi model | 4 |
+| RAM | 4 GB |
+| Storage | 32 GB |
+| Cooling | Heat sink + fan |
+| OS and version | Debian GNU/Linux 13, 6.18.50+rpt-rpi-v8 |
+| Ollama version | 0.40.1 |
+| Models, exact tags and digests | qwen2.5:1.5b `65ec06548149`, smollm2:360m `297281b699fc` |
+| Python version | 3.13.5 |
+| Quantisation, if not the Ollama default | default |
+| Total hardware cost | $169.99 USD |
+| Date run | 9 October 2026 |
 
 The first attempt at this run, on 2026-10-08, was made with heat sinks and
 no fan. It throttled (`throttled=0xe0000`) and its latency numbers were
@@ -69,16 +77,17 @@ borderline.
 
 ## Workflow 5, grounded question answering
 
-Fifteen questions. Four have no answer in the corpus.
+Fifteen questions. Four have no answer in the corpus. Graded against the
+rerun with the restored corpus; see the note at the top of this file.
 
 | Prediction | Your call | Confidence | Actual |
 |---|---|---|---|
-| Small model, abstentions out of 4 | some | leaning | **WRONG.** Zero. It fabricated all four |
-| Mid model, abstentions out of 4 | some | confident | **WRONG.** All four, but see below: it abstained on 13 of 15 questions overall |
-| When a model fabricates, plausible or obviously wrong? | plausible | confident | **RIGHT**, and the clearest confirmation in the run: "$10 per quarter", "12.5%", "Saccharomyces cerevisiae" |
-| Does any model over-abstain on an answerable question? | yes | leaning | **RIGHT**, dramatically: qwen on 9 of 11 |
-| The three two-passage questions | some fail | confident | **WRONG.** All three failed, for both models |
-| Which single question defeats everything? | qa10 | coin-flip | **TRUE BUT UNINFORMATIVE.** qa10 defeated both models, and so did the other fourteen |
+| Small model, abstentions out of 4 | some | leaning | **WRONG.** Zero. smollm2 fabricated all four |
+| Mid model, abstentions out of 4 | some | confident | **RIGHT.** qwen abstained correctly on 2 of 4. *(First graded WRONG against the invalid run, where it abstained on everything.)* |
+| When a model fabricates, plausible or obviously wrong? | plausible | confident | **RIGHT**, and more so than expected. qwen answered an alcohol-percentage question with the real Brix range from the real document: true in every component, wrong in kind |
+| Does any model over-abstain on an answerable question? | yes | leaning | **WRONG.** Zero of eleven, for both models. *(First graded RIGHT against the invalid run, where qwen "over-abstained" on 9 of 11 because there was nothing to read.)* |
+| The three two-passage questions | some fail | confident | **RIGHT.** qwen got 1 of 3, smollm2 none. *(First graded WRONG against the invalid run, where all three failed for both.)* |
+| Which single question defeats everything? | qa10 | coin-flip | **RIGHT.** qa10 defeated both models, though it shares the honour with qa09. Those two are the only answerable questions neither model got. *(First graded "true but uninformative" against the invalid run, where all fifteen defeated both.)* |
 
 ## Offline
 
@@ -104,20 +113,28 @@ its two fewer errors are both of the silent kind that a regex cannot make.
 
 | Confidence | Right | Wrong | Unresolvable |
 |---|---:|---:|---:|
-| Confident | 3 | 4 | 0 |
-| Leaning | 3 | 6 | 1 |
-| Coin flip | 2 | 2 | 1 |
-| **Total** | **8** | **12** | **2** |
+| Confident | 5 | 2 | 0 |
+| Leaning | 2 | 7 | 1 |
+| Coin flip | 3 | 2 | 0 |
+| **Total** | **10** | **11** | **1** |
 
-Four of seven confident predictions broke. Those four are where the
-article is:
+Before the QA rerun this read 8 right, 12 wrong, 2 unresolvable, with four
+of seven confident calls broken. Three QA rows moved from wrong to right,
+one moved from right to wrong, and one resolved from uninformative to
+right. The corrected sheet is a better score and a worse story, which is
+the honest trade.
+
+**Two of seven confident predictions broke.** Those two:
 
 1. The small model would get most of the straightforward extraction cases.
    It got 8 of 22, by failing at format rather than at finding.
-2. The small model would produce invalid output often. It did so once.
-3. The mid model would abstain on some of the unanswerable questions. It
-   abstained on nearly everything.
-4. Some of the two-passage questions would fail. All of them did.
+2. The small model would produce invalid output often. It did so once in
+   fifty, then emitted the same valid word 43 times.
+
+**And the leaning column is where the real humility is: 2 right out of 10.**
+On the calls with a hunch behind them but not much, the hit rate was worse
+than the coin flips. Three of five coin flips landed. That ordering is the
+wrong way round and is worth more than any individual row.
 
 ---
 
@@ -127,7 +144,7 @@ article is:
 | --- | --- | --- |
 | Extraction | **Unnecessary** | Regex 30/30 at zero latency and zero watts; the best model is 28/30 and both its errors are silent |
 | Classification | **Insufficient** | Best model 46% with 26 confident-wrong routings; the other collapsed onto a single label |
-| Grounded QA | **Insufficient** | Zero of eleven answerable questions correct, for both models, by opposite failure modes |
+| Grounded QA | **Marginal** | Single-fact lookup 8/8 for the 1.5B model; two-passage 1/3; correct abstention 2/4 |
 
 - **Unnecessary**: deterministic code already does it
 - **Sufficient**: a small local model does it well enough to use unattended
@@ -135,6 +152,21 @@ article is:
 - **Insufficient**: the error or latency profile is not acceptable
 
 ---
+
+## What this sheet did not ask
+
+Every row above predicts what a model will do. Not one predicts what the
+harness will do, and four of the five measurement flaws found over the
+weekend were in the measuring code rather than in anything measured. The
+worst of them, a corpus directory that was never committed, turned an
+empty reference block into a published capability finding and cost four
+rows of this sheet their first grading.
+
+A future version of this template should carry two more rows, filled in
+before anything runs:
+
+- **What would have to be true for these numbers to be meaningless?**
+- **Would anything in the harness tell me if it were?**
 
 ## Where I was wrong
 
