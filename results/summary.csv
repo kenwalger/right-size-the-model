@@ -2,6 +2,7 @@
 === classification / qwen2.5:1.5b (median 2885 ms, max 10708 ms)
   overall          23/50  46%
   invalid output   0   (a reply that is not one of the six labels)
+  labels used      6 of 6; most common 'complaint' 19 times (38%)
   confident wrong  26   <- the number that matters
   ambiguous cases  5/16
   confusion (expected -> got):
@@ -43,11 +44,18 @@
     answer length  2 tokens median
     wait to start  2369 ms median (model load + prompt)
     across the run 7.6 -> 7.6 tok/s (100% of starting speed, steady)
+    NOTE: answers median 2 tokens. Below 10, tok/s is noisy
+      per call and the across-the-run comparison is weak evidence.
 
 === classification / smollm2:360m (median 1881 ms, max 5886 ms)
   overall          15/50  30%
   invalid output   1   (a reply that is not one of the six labels)
-  confident wrong  3   <- the number that matters
+  labels used      3 of 6; most common 'escalate' 43 times (86%)
+  !! COLLAPSED onto 'escalate'. It is not classifying, it is answering.
+     The two numbers below are not meaningful for this model:
+     confident wrong is low because 'escalate' is excluded or correct,
+     and the ambiguous score rides on the same answer being right by luck.
+  confident wrong  3
   ambiguous cases  10/16
   confusion (expected -> got):
     appointment   escalate 8, question 1
@@ -65,6 +73,8 @@
     answer length  6 tokens median
     wait to start  939 ms median (model load + prompt)
     across the run 6.2 -> 6.2 tok/s (100% of starting speed, steady)
+    NOTE: answers median 6 tokens. Below 10, tok/s is noisy
+      per call and the across-the-run comparison is weak evidence.
 
 === extraction / qwen2.5:1.5b (median 4972 ms, max 39883 ms)
   overall      28/30  93%
@@ -76,7 +86,12 @@
     prompt size    92 tokens median, 106 max
     answer length  9 tokens median
     wait to start  2940 ms median (model load + prompt)
-    across the run 4.3 -> 7.6 tok/s (176% of starting speed, steady)
+    across the run 4.3 -> 7.6 tok/s (176% of starting speed, SPED UP, which is suspicious)
+      Hardware does not get faster partway through a run. Either
+      something else was competing for the CPU at the start, or
+      the generations are too short to time (see below).
+    NOTE: answers median 9 tokens. Below 10, tok/s is noisy
+      per call and the across-the-run comparison is weak evidence.
 
 === extraction / regex (median 0 ms, max 0 ms)
   overall      30/30  100%
@@ -104,24 +119,37 @@
     answer length  7 tokens median
     wait to start  1143 ms median (model load + prompt)
     across the run 5.9 -> 5.7 tok/s (97% of starting speed, steady)
+    NOTE: answers median 7 tokens. Below 10, tok/s is noisy
+      per call and the across-the-run comparison is weak evidence.
 
 === qa / qwen2.5:1.5b (median 3577 ms, max 21921 ms)
-  abstained correctly  4/4   <- the number that matters
+  !! ABSTAINED on 13/15 questions overall. It is refusing, not judging.
+     The abstention score below is not evidence of discrimination:
+     a model that never answers gets it right for free.
+  abstained correctly  4/4
   fabricated           0/4
   over-abstained       9/11
-  keyword present      1/11  (indicative only, read them)
+  keyword present      1/11  <- WEAK. A hit is not a correct answer.
+     This check matches expected words anywhere in the reply, so it
+     scores a wrong answer that happens to contain one of them. The
+     only way to know whether an answer is right is to read it.
   compute:
     generation     4.7 tok/s median
     prompt size    97 tokens median, 112 max
     answer length  5 tokens median
     wait to start  2471 ms median (model load + prompt)
     across the run 4.8 -> 4.6 tok/s (97% of starting speed, steady)
+    NOTE: answers median 5 tokens. Below 10, tok/s is noisy
+      per call and the across-the-run comparison is weak evidence.
 
 === qa / smollm2:360m (median 4646 ms, max 21197 ms)
   abstained correctly  0/4   <- the number that matters
   fabricated           4/4
   over-abstained       1/11
-  keyword present      1/11  (indicative only, read them)
+  keyword present      1/11  <- WEAK. A hit is not a correct answer.
+     This check matches expected words anywhere in the reply, so it
+     scores a wrong answer that happens to contain one of them. The
+     only way to know whether an answer is right is to read it.
     FABRICATED  qa12: What is the alcohol percentage of the 2024 estate Pinot Noir?
                 The alcohol percentage of the 2024 estate Pinot Noir is 12.5%.
     FABRICATED  qa13: Who is the winemaker?
