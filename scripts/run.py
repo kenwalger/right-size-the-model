@@ -226,11 +226,64 @@ def load(name):
     ]
 
 
+CORPUS_MIN_CHARS = 1500
+CORPUS_MIN_DOCS = 3
+
+
 def corpus_text():
-    parts = []
-    for p in sorted((FIX / "corpus").glob("*.md")):
-        parts.append(p.read_text(encoding="utf-8").strip())
-    return "\n\n".join(parts)
+    """The whole reference corpus, concatenated in filename order.
+
+    Refuses to return anything implausibly small, because the first version
+    of this function did. It built a list from a glob and joined it, and a
+    glob that matches nothing joins to the empty string without raising.
+    An entire grounded-QA run was conducted that way, against a reference
+    block containing nothing at all.
+
+    What makes that worth this much commentary is that no part of the
+    system reported it. Every call succeeded. Both models behaved correctly
+    given what they were actually sent: the one told to say NOT IN THE
+    MATERIAL when the material lacked the answer said it thirteen times out
+    of fifteen, and the one with no such discipline answered from parametric
+    knowledge and invented a wine. The scorer scored it. The numbers were
+    internally consistent, had plausible failure modes, and were written up
+    as a finding about model capability.
+
+    The only trace was the prompt token count. The real prompt is about 740
+    tokens; the run reported 97. Four hundred and forty-seven words of
+    reference material cannot be ninety-seven tokens, and that number was
+    sitting in the results table the whole time.
+
+    A loader that returns a plausible value for a missing input will
+    eventually be believed. So this one raises instead.
+    """
+    corpus_dir = FIX / "corpus"
+    paths = sorted(corpus_dir.glob("*.md"))
+
+    if not paths:
+        raise SystemExit(
+            f"\nNo corpus documents found in {corpus_dir}\n\n"
+            "Grounded QA cannot run without reference material, and running\n"
+            "it against an empty reference block produces numbers that look\n"
+            "like a result. If the directory is missing or empty, this\n"
+            "checkout is incomplete: confirm fixtures/corpus/*.md were\n"
+            "committed and pulled.\n"
+        )
+
+    parts = [p.read_text(encoding="utf-8").strip() for p in paths]
+    text = "\n\n".join(parts)
+
+    if len(paths) < CORPUS_MIN_DOCS or len(text) < CORPUS_MIN_CHARS:
+        found = ", ".join(p.name for p in paths)
+        raise SystemExit(
+            f"\nCorpus is too small to be the real fixture set: "
+            f"{len(paths)} file(s), {len(text)} characters.\n"
+            f"Found: {found}\n\n"
+            f"Fixture set v1 is 4 documents totalling about 2,600 "
+            f"characters.\nA truncated corpus scores as a capability "
+            f"failure, so this stops here.\n"
+        )
+
+    return text
 
 
 def progress(i, total, fixture_id, note=""):
@@ -327,6 +380,15 @@ def main():
             sys.exit(1)
         corpus = corpus_text()
         rows = load("grounded-qa.jsonl")
+        # Say out loud what is being sent. The run that went out with an
+        # empty corpus would have been caught here by anyone watching the
+        # first line of output.
+        print(
+            f"  corpus: {len(sorted((FIX / 'corpus').glob('*.md')))} documents, "
+            f"{len(corpus)} characters, roughly {len(corpus) // 4} tokens",
+            file=sys.stderr,
+            flush=True,
+        )
         for i, r in enumerate(rows, 1):
             progress(i, len(rows), r["id"], f"({r['kind']})")
             t0 = time.perf_counter()

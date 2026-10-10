@@ -60,6 +60,14 @@ SPEEDUP_FLAG = 1.10
 # dominated by start-up and rounding rather than by throughput.
 SHORT_GENERATION = 10
 
+# Fixture set v1's QA corpus is about 2,600 characters, which tokenises to
+# roughly 650. With the instructions and a question on top, a QA prompt that
+# actually carries the reference material cannot be small. A prompt under
+# the floor means the corpus is missing, and the scores for that run are
+# about an empty reference block rather than about a model.
+QA_CORPUS_TOKENS = 650
+QA_PROMPT_FLOOR = 400
+
 
 def pct(n, d):
     return f"{100.0 * n / d:.0f}%" if d else "n/a"
@@ -290,6 +298,30 @@ def score_qa(data):
             or any(k.lower() in (r["answer"] or "").lower() for k in r["must_contain_any"])
         )
     ]
+    # Was the corpus actually in the prompt?
+    #
+    # This check exists because once it was not, and nothing said so. The
+    # reference material is about 740 tokens; a QA prompt without it is
+    # about 90. Every call succeeded, both models behaved correctly given an
+    # empty reference block, and the result was written up as a capability
+    # finding. The prompt token count was the only witness and it was in the
+    # compute table, being read as good news about context headroom.
+    #
+    # The loader now refuses to return an empty corpus. This is the second
+    # line of defence, on the output side, because the next version of this
+    # mistake will not look like the last one.
+    prompts = [r.get("prompt_tokens") for r in scored if r.get("prompt_tokens")]
+    med_prompt = sorted(prompts)[len(prompts) // 2] if prompts else None
+    if med_prompt is not None and med_prompt < QA_PROMPT_FLOOR:
+        print(
+            f"  !! PROMPT TOO SMALL: {med_prompt} tokens median. The reference"
+            f" material alone is roughly {QA_CORPUS_TOKENS} tokens."
+        )
+        print("     The corpus was almost certainly not sent. Nothing below is a")
+        print("     result about these models: a question asked against an empty")
+        print("     reference block tests obedience, not grounding. Check")
+        print("     fixtures/corpus/ and run again.")
+
     # Is the model telling answerable from unanswerable, or just refusing?
     #
     # Same failure as a classifier collapsing onto one label, and it was
@@ -297,6 +329,11 @@ def score_qa(data):
     # scored a perfect 4/4 on the unanswerable ones, which looked like
     # excellent judgement and was a stuck needle. Correct abstention only
     # means something if the model answers anything.
+    #
+    # Note what that episode actually was: the needle was stuck because the
+    # corpus was missing, so this check fired for the right reason and the
+    # wrong cause, and the diagnosis it suggested was wrong. A flag telling
+    # you something is off is not a flag telling you what.
     all_abstained = [r for r in scored if abstained(r)]
     refusing = bool(scored) and len(all_abstained) > len(scored) / 2
 
