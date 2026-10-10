@@ -1,0 +1,32 @@
+logging to /home/kalger/right-size-the-model/offline-test-20261009-191800.log
+
+=== before: the network should be up
+    dns lookup  reachable
+    ping 1.1.1.1 reachable
+    network is up, as expected
+
+dead man's switch armed: radio returns in 900s whatever happens
+
+=== switching the radio off
+=== after: the network should be gone
+    dns lookup  no answer
+    ping 1.1.1.1 no route
+
+=== running one call from each workflow, with no route out
+Three calls against smollm2:360m, one per workflow.
+
+  extraction       OK   5.8 tok/s      'ORD-448120'
+  classification   OK   6.2 tok/s      'Category: Escalate'
+  grounded qa      OK   5.7 tok/s      'The Vineyard tier has 12 bottles per quarter.'
+
+All three ran. Inference did not need the network.
+
+RESULT: inference ran with the radio off and no route to the internet.
+
+full transcript: /home/kalger/right-size-the-model/offline-test-20261009-191800.log
+
+=== restoring the radio
+    dns lookup  no answer
+    ping 1.1.1.1 no route
+    network has NOT come back yet. Give it a moment, then check
+    with: sudo rfkill list

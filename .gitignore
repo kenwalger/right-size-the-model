@@ -274,3 +274,8 @@ content/
 # Offline test transcripts. The run you keep gets copied into runs/
 # on purpose; the rest are scratch.
 offline-test-*.log
+
+
+# Run transcripts are evidence, not noise. The *.log rule above would
+# otherwise silently drop the only artifact the offline test produces.
+!runs/**/*.log
