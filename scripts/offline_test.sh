@@ -83,13 +83,26 @@ cleanup() {
   echo "=== restoring the radio"
   radio_up
   kill "$DEADMAN_PID" 2>/dev/null
-  sleep 3
-  if reachable; then
-    echo "    network is back"
-  else
-    echo "    network has NOT come back yet. Give it a moment, then check"
-    echo "    with: sudo rfkill list"
-  fi
+
+  # Wifi needs to reassociate and get a lease, which takes longer than a
+  # single check allows. The first version slept three seconds and then
+  # announced the network had not come back, at the one moment in the run
+  # where a false alarm is least welcome.
+  local waited=0
+  while [[ $waited -lt 45 ]]; do
+    sleep 5
+    waited=$((waited + 5))
+    if reachable >/dev/null 2>&1; then
+      echo "    network is back after ${waited}s"
+      reachable
+      return
+    fi
+    echo "    still down after ${waited}s, waiting"
+  done
+
+  echo "    network has NOT come back after ${waited}s. Check with:"
+  echo "      sudo rfkill list"
+  echo "      sudo rfkill unblock wifi"
 }
 trap cleanup EXIT
 

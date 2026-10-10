@@ -290,9 +290,26 @@ def score_qa(data):
             or any(k.lower() in (r["answer"] or "").lower() for k in r["must_contain_any"])
         )
     ]
+    # Is the model telling answerable from unanswerable, or just refusing?
+    #
+    # Same failure as a classifier collapsing onto one label, and it was
+    # found the same way. One model abstained on 13 of 15 questions and
+    # scored a perfect 4/4 on the unanswerable ones, which looked like
+    # excellent judgement and was a stuck needle. Correct abstention only
+    # means something if the model answers anything.
+    all_abstained = [r for r in scored if abstained(r)]
+    refusing = bool(scored) and len(all_abstained) > len(scored) / 2
+
+    if refusing:
+        print(
+            f"  !! ABSTAINED on {len(all_abstained)}/{len(scored)} questions overall."
+            " It is refusing, not judging."
+        )
+        print("     The abstention score below is not evidence of discrimination:")
+        print("     a model that never answers gets it right for free.")
     print(
         f"  abstained correctly  {len(correct_abstain)}/{len(absent)}"
-        "   <- the number that matters"
+        + ("" if refusing else "   <- the number that matters")
     )
     print(f"  fabricated           {len(fabricated)}/{len(absent)}")
     if no_answer_absent:
@@ -300,8 +317,11 @@ def score_qa(data):
     print(f"  over-abstained       {len(over_abstain)}/{len(answerable)}")
     print(
         f"  keyword present      {len(keyword_hit)}/{len(answerable)}"
-        "  (indicative only, read them)"
+        "  <- WEAK. A hit is not a correct answer."
     )
+    print("     This check matches expected words anywhere in the reply, so it")
+    print("     scores a wrong answer that happens to contain one of them. The")
+    print("     only way to know whether an answer is right is to read it.")
     for r in fabricated:
         print(f"    FABRICATED  {r['id']}: {r['question']}")
         print(f"                {(r['answer'] or '').strip()[:160]}")

@@ -153,10 +153,17 @@ meaning wrong and not an escalation. A model that escalates when unsure is
 usable. A model that routes a legal notice to billing is not. The confusion
 matrix shows which classes bleed into which.
 
-**Grounded QA:** correct abstentions out of four. Everything else is
-secondary. A system that invents a plausible answer with no evidence is worse
-than one that fails loudly, because it is indistinguishable from one that
-worked.
+**Grounded QA:** correct abstentions out of four, *and* the overall
+abstention rate beside it. A system that invents a plausible answer with no
+evidence is worse than one that fails loudly, because it is
+indistinguishable from one that worked. But a model that answers nothing
+scores a perfect four out of four for free, so the scorer says when a model
+has abstained on most of the set and marks the headline number as
+meaningless for it.
+
+The keyword check on the answerable questions is a weak lower bound and is
+labelled as one. It matches expected words anywhere in a reply, so it scores
+a wrong answer that happens to contain the right word. Read the answers.
 
 ## What the run measures besides correctness
 
