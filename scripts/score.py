@@ -179,7 +179,7 @@ def score_extraction(data):
     scored = answered + no_answer
     report_failures(no_answer, unreachable, len(recs))
     if not scored:
-        return 0, 0
+        return 0, 0, None
     right = sum(1 for r in answered if (r["answer"] or None) == (r["expected"] or None))
     present = [r for r in scored if r["expected"]]
     absent = [r for r in scored if not r["expected"]]
@@ -203,7 +203,7 @@ def score_extraction(data):
     )
     for r in invented:
         print(f"    INVENTED  {r['id']}: {r['answer']!r}  <- {r['note']}")
-    return right, len(scored)
+    return right, len(scored), None
 
 
 def score_classification(data):
@@ -212,7 +212,7 @@ def score_classification(data):
     scored = answered + no_answer
     report_failures(no_answer, unreachable, len(recs))
     if not scored:
-        return 0, 0
+        return 0, 0, None
     right = sum(1 for r in answered if r["answer"] == r["expected"])
     invalid = [r for r in answered if str(r["answer"]).startswith("INVALID")]
     confident_wrong = [
@@ -265,7 +265,7 @@ def score_classification(data):
             f"    WRONG  {r['id']}  exp {r['expected']:<12} got {r['answer']:<12} "
             f"{r['input'][:48]!r}"
         )
-    return right, len(scored)
+    return right, len(scored), None
 
 
 def score_qa(data):
@@ -274,7 +274,7 @@ def score_qa(data):
     report_failures(no_answer, unreachable, len(recs))
     scored = answered + no_answer
     if not scored:
-        return 0, 0
+        return 0, 0, None
     absent = [r for r in scored if r["kind"] == "absent"]
     answerable = [r for r in scored if r["kind"] != "absent"]
 
@@ -362,7 +362,22 @@ def score_qa(data):
     for r in fabricated:
         print(f"    FABRICATED  {r['id']}: {r['question']}")
         print(f"                {(r['answer'] or '').strip()[:160]}")
-    return len(correct_abstain), len(absent)
+    # No headline score for QA, deliberately.
+    #
+    # Correct abstention is not a score. A model that abstains on everything
+    # gets 4/4 for free, and the only number that means anything here is how
+    # many answerable questions were answered correctly, which no scorer can
+    # compute: it comes from reading all of them against the corpus by hand.
+    #
+    # Printing abstention in a `score` column made summary.csv disagree with
+    # the write-up, on the workflow the write-up was about. A derived file
+    # that quietly contradicts the conclusions drawn from it is the same
+    # class of bug as everything else this harness got caught doing.
+    note = (
+        f"abstained_correctly={len(correct_abstain)}/{len(absent)}; "
+        "correctness is hand-checked, see runs/*/results.md"
+    )
+    return None, None, note
 
 
 def main():
@@ -380,11 +395,11 @@ def main():
             f"(median {med:.0f} ms, max {lat[-1]:.0f} ms)"
         )
         if data["workflow"] == "extraction":
-            n, d = score_extraction(data)
+            n, d, note = score_extraction(data)
         elif data["workflow"] == "classification":
-            n, d = score_classification(data)
+            n, d, note = score_classification(data)
         else:
-            n, d = score_qa(data)
+            n, d, note = score_qa(data)
         tps = report_compute(data["records"])
         _, no_answer, unreachable = split(data["records"])
         rows.append(
@@ -397,6 +412,7 @@ def main():
                 tps,
                 len(no_answer),
                 len(unreachable),
+                note,
             )
         )
 
@@ -405,17 +421,30 @@ def main():
         f"{'workflow':<16}{'model':<22}{'score':<10}{'median ms':>10}"
         f"{'tok/s':>8}{'no answer':>11}{'unreached':>11}"
     )
-    for w, m, n, d, med, tps, na, un in rows:
+    for w, m, n, d, med, tps, na, un, note in rows:
         speed = f"{tps:.1f}" if tps is not None else "-"
-        print(f"{w:<16}{m:<22}{f'{n}/{d}':<10}{med:>10.0f}{speed:>8}{na:>11}{un:>11}")
+        score = f"{n}/{d}" if n is not None else "hand-read"
+        print(f"{w:<16}{m:<22}{score:<10}{med:>10.0f}{speed:>8}{na:>11}{un:>11}")
+    if any(r[8] for r in rows):
+        print()
+        for w, m, *_rest, note in rows:
+            if note:
+                print(f"  {w} / {m}: {note}")
     if any(r[7] for r in rows):
         print("\nSome calls never reached a working model. Those runs are incomplete")
         print("and their scores are computed over the calls that ran.")
 
     if "--csv" in sys.argv:
-        print("\nworkflow,model,score,total,median_ms,median_tps,no_answer,unreached")
-        for w, m, n, d, med, tps, na, un in rows:
-            print(f"{w},{m},{n},{d},{med:.0f},{tps if tps is not None else ''},{na},{un}")
+        print(
+            "\nworkflow,model,score,total,median_ms,median_tps,"
+            "no_answer,unreached,note"
+        )
+        for w, m, n, d, med, tps, na, un, note in rows:
+            score = "" if n is None else n
+            total = "" if d is None else d
+            speed = "" if tps is None else tps
+            cell = f'"{note}"' if note else ""
+            print(f"{w},{m},{score},{total},{med:.0f},{speed},{na},{un},{cell}")
 
 
 if __name__ == "__main__":
