@@ -27,7 +27,7 @@ wonders why nothing installs, this is the reason.
 
 Before writing, open the gear icon or **Edit Settings** and fill in:
 
-- Hostname: something you will recognise, `cellar-pi` or similar
+- Hostname: something you will recognize, `cellar-pi` or similar
 - Username and password
 - Wi-Fi SSID and password, with the right country set
 - Locale and timezone

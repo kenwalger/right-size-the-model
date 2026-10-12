@@ -9,7 +9,7 @@ Fixture set: **v1**
 > **The grounded QA section was graded twice.** The first grading was
 > against an invalid run: `fixtures/corpus/` had never been committed, so
 > every question was asked against an empty reference block. Four rows in
-> that section were marked against behaviour that was an artifact of the
+> that section were marked against behavior that was an artifact of the
 > missing corpus. They are regraded here against the rerun, and the
 > original wrong gradings are noted inline, because a prediction sheet that
 > quietly corrects itself is worth nothing.
@@ -34,7 +34,7 @@ Fixture set: **v1**
 | Ollama version | 0.40.1 |
 | Models, exact tags and digests | qwen2.5:1.5b `65ec06548149`, smollm2:360m `297281b699fc` |
 | Python version | 3.13.5 |
-| Quantisation, if not the Ollama default | default |
+| Quantization, if not the Ollama default | default |
 | Total hardware cost | $169.99 USD |
 | Date run | 9 October 2026 |
 
@@ -87,7 +87,7 @@ rerun with the restored corpus; see the note at the top of this file.
 | When a model fabricates, plausible or obviously wrong? | plausible | confident | **RIGHT**, and more so than expected. qwen answered an alcohol-percentage question with the real Brix range from the real document: true in every component, wrong in kind |
 | Does any model over-abstain on an answerable question? | yes | leaning | **WRONG.** Zero of eleven, for both models. *(First graded RIGHT against the invalid run, where qwen "over-abstained" on 9 of 11 because there was nothing to read.)* |
 | The three two-passage questions | some fail | confident | **RIGHT.** qwen got 1 of 3, smollm2 none. *(First graded WRONG against the invalid run, where all three failed for both.)* |
-| Which single question defeats everything? | qa10 | coin-flip | **RIGHT.** qa10 defeated both models, though it shares the honour with qa09. Those two are the only answerable questions neither model got. *(First graded "true but uninformative" against the invalid run, where all fifteen defeated both.)* |
+| Which single question defeats everything? | qa10 | coin-flip | **RIGHT.** qa10 defeated both models, though it shares the honor with qa09. Those two are the only answerable questions neither model got. *(First graded "true but uninformative" against the invalid run, where all fifteen defeated both.)* |
 
 ## Offline
 

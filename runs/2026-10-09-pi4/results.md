@@ -25,7 +25,7 @@ before citing any of this.
 | Runtime | Ollama 0.40.1 |
 | Python | 3.13.5 |
 | Models | qwen2.5:1.5b `65ec06548149`, smollm2:360m `297281b699fc` |
-| Quantisation | Ollama default for each tag |
+| Quantization | Ollama default for each tag |
 | Total hardware cost | $169.99 USD |
 | Date | 2026-10-09 |
 | Throttled | `0x0` before and after every run, including the QA rerun |
@@ -279,7 +279,7 @@ slower than smollm2 on extraction (4.3 against 5.9 tok/s) and faster on
 classification (7.5 against 6.2), because on classification it answers in
 two tokens where smollm2 takes six.
 
-Note also that the same corpus tokenises to 708 for qwen and 786 for
+Note also that the same corpus tokenizes to 708 for qwen and 786 for
 smollm2. Prompt size is a property of the pairing, not of the text.
 
 ### What 650 tokens of context actually cost
@@ -439,7 +439,7 @@ them, twice.
 
 ### The common shape, and the thing it did not cover
 
-Flaws 2, 3 and 5 are one error: **a metric that rewards the safe behaviour
+Flaws 2, 3 and 5 are one error: **a metric that rewards the safe behavior
 will certify any model that only ever does the safe thing.** An exemption
 for caution has to be paired with evidence that the model is making
 distinctions at all, or it measures nothing and reports it in confident
@@ -525,7 +525,7 @@ just emitted the same one 43 times.
 **I expected over-abstention on answerable questions.** Zero out of eleven,
 for both models, once they had something to read. The nine-of-eleven
 over-abstention I recorded on the first pass was the empty corpus, and
-reading it as model behaviour was the single largest error of the weekend.
+reading it as model behavior was the single largest error of the weekend.
 
 **I expected a gradient on the two-passage questions, where combining two
 passages is harder than reading one.** The gradient is real and much
@@ -540,8 +540,8 @@ error types a regex is structurally incapable of making: inventing an
 identifier that is not there, and denying one that is.
 
 **What I was most wrong about, which is not on the prediction sheet at
-all.** I predicted model behaviour for a whole weekend and never predicted
-harness behaviour. Four of the five flaws above were in code written to
+all.** I predicted model behavior for a whole weekend and never predicted
+harness behavior. Four of the five flaws above were in code written to
 measure with, not in anything being measured, and the worst of them turned
 a missing directory into a published conclusion. The prediction sheet asks
 what the models will do. The question it should also ask is what would have

@@ -162,7 +162,7 @@ has abstained on most of the set and marks the headline number as
 meaningless for it.
 
 The keyword check on the answerable questions is a weak lower bound and is
-labelled as one. It matches expected words anywhere in a reply, so it scores
+labeled as one. It matches expected words anywhere in a reply, so it scores
 a wrong answer that happens to contain the right word. Read the answers.
 
 ## What the run measures besides correctness

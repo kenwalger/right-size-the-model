@@ -13,11 +13,11 @@ Three reasons, and only the third is about the article.
 
 **It stops the experiment from becoming tuning.** Without a committed
 expectation there is always one more model worth trying, one more prompt
-tweak, one more quantisation. With one, there is a defined moment when you
+tweak, one more quantization. With one, there is a defined moment when you
 are finished: you ran the thing, you compared it to what you said, you are
 done.
 
-**It stops you from rationalising the result.** It is remarkably easy to look
+**It stops you from rationalizing the result.** It is remarkably easy to look
 at an outcome and feel you knew it all along. Written predictions make that
 impossible to do accidentally.
 
@@ -87,7 +87,7 @@ apart afterwards.
 | OS and version | |
 | Ollama version | |
 | Models, exact tags and digests | |
-| Quantisation, if not the Ollama default | |
+| Quantization, if not the Ollama default | |
 | Total hardware cost | |
 | Date run | |
 

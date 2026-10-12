@@ -60,7 +60,7 @@ SPEEDUP_FLAG = 1.10
 # dominated by start-up and rounding rather than by throughput.
 SHORT_GENERATION = 10
 
-# Fixture set v1's QA corpus is about 2,600 characters, which tokenises to
+# Fixture set v1's QA corpus is about 2,600 characters, which tokenizes to
 # roughly 650. With the instructions and a question on top, a QA prompt that
 # actually carries the reference material cannot be small. A prompt under
 # the floor means the corpus is missing, and the scores for that run are
@@ -308,7 +308,7 @@ def score_qa(data):
     # compute table, being read as good news about context headroom.
     #
     # The loader now refuses to return an empty corpus. This is the second
-    # line of defence, on the output side, because the next version of this
+    # line of defense, on the output side, because the next version of this
     # mistake will not look like the last one.
     prompts = [r.get("prompt_tokens") for r in scored if r.get("prompt_tokens")]
     med_prompt = sorted(prompts)[len(prompts) // 2] if prompts else None

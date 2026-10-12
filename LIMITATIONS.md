@@ -17,8 +17,8 @@ code. A model that does well here has done well at three bounded jobs.
 move both speed and memory substantially, so these numbers describe
 model-plus-runtime, not the model.
 
-**One quantisation**, whatever Ollama ships by default for each tag. A
-different quantisation of the same model is a different measurement.
+**One quantization**, whatever Ollama ships by default for each tag. A
+different quantization of the same model is a different measurement.
 
 **One device**, in one thermal situation, run once. There is no repeat
 sampling and no variance estimate. Treat a gap of one or two cases as noise.
@@ -85,7 +85,7 @@ hour of work is a different appliance, and that was not measured.
 
 ## What the numbers do support
 
-Within one device, one runtime, one quantisation and these fixtures:
+Within one device, one runtime, one quantization and these fixtures:
 
 - whether a model matched a deterministic baseline on a job the baseline
   was built for

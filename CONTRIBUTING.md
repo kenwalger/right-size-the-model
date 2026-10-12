@@ -10,7 +10,7 @@ New fixtures are welcome. Editing one that models have already been run
 against silently invalidates every number published against it, and nothing
 in the output reveals that it happened.
 
-If a fixture is genuinely wrong (a mislabelled message, an answer that is
+If a fixture is genuinely wrong (a mislabeled message, an answer that is
 actually in the corpus, a decoy that is not a decoy), say so in an issue
 rather than fixing it quietly. Fixing it means bumping the fixture set
 version in `FIXTURES.md` and noting the change in its history, and it means
